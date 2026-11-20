@@ -120,7 +120,7 @@ code,.mono{
 }
 
 .sb-foot{
-  padding:12px 14px;border-top:1px solid var(--line);
+  padding:12px 16px;border-top:1px solid var(--line);
   display:flex;flex-direction:column;gap:10px;background:var(--surface);
 }
 .node-status{
@@ -179,7 +179,7 @@ code,.mono{
 .verify-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 
-/* Metric Strip (Hairline Divided) */
+/* Metric Strip */
 .stat-strip{
   display:grid;grid-template-columns:repeat(4,1fr);
   background:var(--surface);border:1px solid var(--line);border-radius:8px;
@@ -303,6 +303,7 @@ img.qr-card{width:168px;height:168px;background:#fff;border:1px solid var(--line
 
 /* Dropzone & Multi-Sig Slots */
 .dropzone{
+  display:block;
   border:1.5px dashed var(--line-2);border-radius:8px;padding:18px;text-align:center;
   background:var(--surface-2);cursor:pointer;margin-bottom:12px;transition:border-color .15s ease;
 }
@@ -313,12 +314,6 @@ img.qr-card{width:168px;height:168px;background:#fff;border:1px solid var(--line
   border:1px dashed var(--line-2);color:var(--mute);
 }
 .sig-slot.filled{border-style:solid;border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok)}
-
-/* Version Chain Timeline */
-.ver-list{display:flex;flex-direction:column;gap:14px}
-.ver-rail{
-  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute);margin-bottom:12px;
-}
 
 /* Key Block */
 .pem-box{
@@ -479,7 +474,7 @@ const $=s=>document.querySelector(s), app=$('#app'), enc=encodeURIComponent;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const GENESIS='0'.repeat(64);
 const hasSubtle=!!(globalThis.crypto&&crypto.subtle);
-let adminTab='records';
+let adminTab='records', verifyTab='single';
 
 /* Theme & Drawer */
 function setTheme(t){
@@ -601,9 +596,10 @@ function route(){
 addEventListener('hashchange',route);
 addEventListener('load',()=>{refreshNodeStatus();route();});
 
-/* ==================== 1. VERIFY CREDENTIAL ==================== */
+/* ==================== 1. VERIFY CREDENTIAL (SINGLE + BULK) ==================== */
 function verify(){
   const q=hashArgs();
+  if(q.get('s')) verifyTab='single';
   app.innerHTML=`
     <div class="page-head">
       <div>
@@ -611,6 +607,24 @@ function verify(){
         <p>Zero-trust client verification. Recomputes SHA-256 leaf hashes, Merkle inclusion paths, hash-chain links, and Ed25519 signatures directly inside your browser.</p>
       </div>
     </div>
+    <div class="tabs noprint" role="tablist">
+      <button type="button" class="tab ${verifyTab==='single'?'on':''}" data-vtab="single">Single Credential</button>
+      <button type="button" class="tab ${verifyTab==='bulk'?'on':''}" data-vtab="bulk">Bulk Verify (Employers)</button>
+    </div>
+    <div id="vBody"></div>`;
+
+  document.querySelectorAll('[data-vtab]').forEach(b=>b.onclick=()=>{
+    verifyTab=b.dataset.vtab;
+    if(verifyTab==='bulk' && location.hash.includes('?')) location.hash='verify';
+    else verify();
+  });
+
+  if(verifyTab==='bulk'){
+    renderBulkVerify();
+    return;
+  }
+
+  $('#vBody').innerHTML=`
     <div class="panel noprint">
       <div class="panel-body">
         <form class="row row-end" id="vf">
@@ -630,6 +644,7 @@ function verify(){
       </div>
     </div>
     <div id="vout"></div>`;
+
   $('#vf').onsubmit=e=>{
     e.preventDefault();
     const p=new URLSearchParams({s:$('#vs').value.trim()});
@@ -639,6 +654,142 @@ function verify(){
   if($('#vclr'))$('#vclr').onclick=()=>{location.hash='verify';};
   if(q.get('s'))runVerify(q.get('s'),q.get('c'),q.get('h'));
   else $('#vout').innerHTML=`<div class="panel"><div class="empty">Enter a Student ID above or scan the QR code on an official marksheet to verify its cryptographic proof.</div></div>`;
+}
+
+function renderBulkVerify(){
+  $('#vBody').innerHTML=`
+    <div class="panel noprint">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Employer / Admissions Bulk Verification</h2>
+          <div class="panel-sub">Upload or paste applicant claims (<code>student_id,course,claimed_marks</code>) to detect forged or inflated resumes in parallel.</div>
+        </div>
+        <button type="button" class="subtle sm" id="bSample">Load Sample Claims</button>
+      </div>
+      <div class="panel-body">
+        <label class="dropzone" id="bdz">
+          <div style="font-weight:600;font-size:13px">Drop an applicant .CSV file here, or click to browse</div>
+          <div style="font-size:12px;color:var(--mute);margin-top:3px">Each row is independently verified via WebCrypto Merkle + Ed25519 proofs</div>
+          <input type="file" id="bFile" accept=".csv,text/csv,text/plain" hidden>
+        </label>
+        <textarea id="bCsv" placeholder="student_id,course,claimed_marks&#10;1,CSE205,89&#10;2,CSE202,99"></textarea>
+        <div class="between" style="margin-top:12px">
+          <span class="mono">claimed_marks is optional — include it to flag resume inflation</span>
+          <button type="button" id="bRun">Verify All Credentials</button>
+        </div>
+      </div>
+    </div>
+    <div id="bOut"></div>`;
+
+  $('#bSample').onclick=()=>{
+    $('#bCsv').value=`student_id,course,claimed_marks\n1,CSE205,89\n2,CSE202,99\nREG999,CSE101,85`;
+    toast('Loaded sample applicant claims');
+  };
+  const readF=f=>{
+    if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{$('#bCsv').value=String(rd.result||'');toast(`Loaded ${f.name}`);};
+    rd.readAsText(f);
+  };
+  $('#bFile').onchange=e=>readF(e.target.files?.[0]);
+  const dz=$('#bdz');
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag');};
+  dz.ondragleave=()=>dz.classList.remove('drag');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');readF(e.dataTransfer.files?.[0]);};
+
+  $('#bRun').onclick=async()=>{
+    const lines=$('#bCsv').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const reqs=[];
+    lines.forEach((line,i)=>{
+      if(i===0 && /^student_id\s*,/i.test(line))return;
+      const [s,c,mRaw]=line.split(',').map(x=>(x||'').trim());
+      if(!s)return;
+      const hasClaim=mRaw!==undefined&&mRaw!=='';
+      reqs.push({student_id:s,course:c||'',claimed:hasClaim?Number(mRaw):null,rawClaim:mRaw||''});
+    });
+    if(!reqs.length)return toast('Paste at least one student row first',true);
+    if(!hasSubtle)return toast('WebCrypto requires HTTPS or localhost',true);
+
+    $('#bOut').innerHTML='<div class="panel"><div class="empty">Verifying Merkle proofs &amp; Ed25519 signatures across all applicants…</div></div>';
+    const t0=performance.now();
+    const {j:cp}=await api('/api/checkpoints');
+    const cpMap=new Map();
+    let prev=GENESIS, chainBroken=false;
+    for(const k of (cp.checkpoints||[])){
+      const calcHead=await headOf(k);
+      const sigOk=await verifyEd25519(cp.ledger_pub,k.head,k.sig);
+      const linkOk=k.prev===prev&&calcHead===k.head&&!chainBroken;
+      if(!linkOk||sigOk===false)chainBroken=true;
+      cpMap.set(k.n,{cp:k,linkOk,sigOk});
+      prev=k.head;
+    }
+
+    const rows=await Promise.all(reqs.map(async req=>{
+      const {j:res}=await api(`/api/result?s=${enc(req.student_id)}${req.course?'&c='+enc(req.course):''}`);
+      if(!res.results?.length)return {...req,status:'not_found',detail:'No published record in ledger'};
+      const x=res.results.find(r=>!r.superseded)||res.results[0];
+      const leaf=await leafOf(x.record);
+      const meta=cpMap.get(x.record.batch);
+      const {root:calcRoot}=await traceMerkle(leaf,x.proof);
+      let corrOk=true;
+      if(x.record.version>1){
+        const d=await corrDigestOf(x.record);
+        const validAdmins=new Set();
+        for(const [aid,sig] of (x.record.approvals||[])){
+          const pub=cp.admin_pubs?.[aid];
+          if(pub && await verifyEd25519(pub,d,sig)===true) validAdmins.add(aid);
+        }
+        corrOk=validAdmins.size>=2;
+      }
+      const valid=leaf===x.leaf&&!!meta?.cp&&calcRoot===meta.cp.root&&!!meta?.linkOk&&meta.sigOk!==false&&corrOk;
+      if(!valid)return {...req,actual:x.record.marks,course:x.record.course,ver:x.record.version,batch:x.batch.n,status:'tampered',detail:'Cryptographic proof failed'};
+      if(req.claimed!==null && (Number.isNaN(req.claimed)||Number(req.claimed)!==Number(x.record.marks))){
+        return {...req,actual:x.record.marks,course:x.record.course,ver:x.record.version,batch:x.batch.n,status:'mismatch',detail:`Claimed ${req.rawClaim}, ledger verified ${x.record.marks}`};
+      }
+      return {...req,actual:x.record.marks,course:x.record.course,ver:x.record.version,batch:x.batch.n,status:'verified',detail:`Batch #${x.batch.n} · v${x.record.version} · Ed25519 OK`};
+    }));
+    const ms=(performance.now()-t0).toFixed(1);
+
+    const cOk=rows.filter(r=>r.status==='verified').length;
+    const cFraud=rows.filter(r=>r.status==='mismatch'||r.status==='tampered').length;
+    const cMiss=rows.filter(r=>r.status==='not_found').length;
+
+    const badgeOf=st=>st==='verified'?'<span class="badge ok">Verified</span>'
+      :st==='mismatch'?'<span class="badge err">Marks Mismatch</span>'
+      :st==='tampered'?'<span class="badge err">Tampered</span>'
+      :'<span class="badge warn">Not Found</span>';
+
+    $('#bOut').innerHTML=`
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-k">Applicants Checked</div><div class="stat-v">${rows.length}</div><div class="stat-s">Completed in ${ms} ms</div></div>
+        <div class="stat-cell"><div class="stat-k">Cryptographically Verified</div><div class="stat-v" style="color:var(--ok)">${cOk}</div><div class="stat-s">Matches signed ledger</div></div>
+        <div class="stat-cell"><div class="stat-k">Fraud / Mismatches</div><div class="stat-v" style="color:${cFraud?'var(--err)':'var(--ink)'}">${cFraud}</div><div class="stat-s">Inflated or tampered</div></div>
+        <div class="stat-cell"><div class="stat-k">Not Found</div><div class="stat-v" style="color:${cMiss?'var(--warn)':'var(--ink)'}">${cMiss}</div><div class="stat-s">Unregistered records</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Bulk Verification Results</h2>
+          <button type="button" class="ghost sm" id="bExport">Export Report JSON</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Student ID</th><th>Course</th><th>Claimed</th><th>Ledger Verified</th><th>Verdict</th><th>Details</th><th></th></tr></thead>
+          <tbody>${rows.map(r=>`<tr>
+            <td class="num"><b>${esc(r.student_id)}</b></td>
+            <td>${esc(r.course||'—')}</td>
+            <td class="num">${r.rawClaim||'—'}</td>
+            <td class="num"><b>${r.actual!==undefined?r.actual:'—'}</b></td>
+            <td>${badgeOf(r.status)}</td>
+            <td style="font-size:12.5px;color:${r.status==='mismatch'||r.status==='tampered'?'var(--err)':'var(--mute)'}">${esc(r.detail)}</td>
+            <td style="text-align:right">${r.actual!==undefined?`<a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}"><button type="button" class="subtle xs">Inspect</button></a>`:''}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    $('#bExport').onclick=()=>{
+      downloadJson(`bulk-verification-${Date.now()}.json`,{verified_at:new Date().toISOString(),elapsed_ms:Number(ms),summary:{total:rows.length,verified:cOk,fraud_or_mismatch:cFraud,not_found:cMiss},results:rows});
+      toast('Bulk verification report downloaded');
+    };
+  };
 }
 
 async function runVerify(s,c,h){
