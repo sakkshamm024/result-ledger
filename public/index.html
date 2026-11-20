@@ -174,7 +174,6 @@ code,.mono{
 .panel-title{margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em}
 .panel-sub{font-size:12.5px;color:var(--mute);margin-top:2px}
 .panel-body{padding:18px}
-.panel-body.tight{padding:0}
 
 .verify-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -225,7 +224,7 @@ button.icon-btn{width:32px;height:32px;padding:0}
 
 /* Segmented Tabs inside Views */
 .tabs{
-  display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;
+  display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap;
 }
 .tab{
   height:auto;padding:9px 14px;border:none;border-bottom:2px solid transparent;border-radius:0;
@@ -475,6 +474,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const GENESIS='0'.repeat(64);
 const hasSubtle=!!(globalThis.crypto&&crypto.subtle);
 let adminTab='records', verifyTab='single';
+let pinnedKeys={ledger_pub:'',admin_pubs:{}};
 
 /* Theme & Drawer */
 function setTheme(t){
@@ -542,7 +542,7 @@ function pemToDer(pem){
   return Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
 }
 async function verifyEd25519(pubPem,msgHex,sigHex){
-  if(!hasSubtle)return null;
+  if(!hasSubtle||!pubPem||!msgHex||!sigHex)return null;
   try{
     let k=keyCache.get(pubPem);
     if(!k){
@@ -550,7 +550,7 @@ async function verifyEd25519(pubPem,msgHex,sigHex){
       keyCache.set(pubPem,k);
     }
     return await crypto.subtle.verify('Ed25519',k,hexB(sigHex),hexB(msgHex));
-  }catch{return null;}
+  }catch{return false;}
 }
 
 /* API & Helpers */
@@ -566,13 +566,18 @@ async function refreshNodeStatus(){
   try{
     const {ok,j}=await api('/api/checkpoints');
     if(!ok)throw new Error();
+    if(j.ledger_pub){
+      pinnedKeys={ledger_pub:j.ledger_pub,admin_pubs:j.admin_pubs||{}};
+      localStorage.setItem('rl_pinned_keys',JSON.stringify(pinnedKeys));
+    }
     const n=j.checkpoints?.length||0;
     $('#sbBatches').textContent=n;
     $('#nodeDot').className='dot';
     $('#nodeText').textContent=n?`${n} signed batch${n===1?'':'es'} live`:'Ledger ready (genesis)';
   }catch{
+    try{const saved=JSON.parse(localStorage.getItem('rl_pinned_keys')||'{}');if(saved.ledger_pub)pinnedKeys=saved;}catch{}
     $('#nodeDot').className='dot err';
-    $('#nodeText').textContent='Ledger offline';
+    $('#nodeText').textContent='Offline mode (cached keys)';
   }
 }
 
@@ -596,7 +601,7 @@ function route(){
 addEventListener('hashchange',route);
 addEventListener('load',()=>{refreshNodeStatus();route();});
 
-/* ==================== 1. VERIFY CREDENTIAL (SINGLE + BULK) ==================== */
+/* ==================== 1. VERIFY CREDENTIAL (SINGLE + BULK + OFFLINE) ==================== */
 function verify(){
   const q=hashArgs();
   if(q.get('s')) verifyTab='single';
@@ -610,19 +615,18 @@ function verify(){
     <div class="tabs noprint" role="tablist">
       <button type="button" class="tab ${verifyTab==='single'?'on':''}" data-vtab="single">Single Credential</button>
       <button type="button" class="tab ${verifyTab==='bulk'?'on':''}" data-vtab="bulk">Bulk Verify (Employers)</button>
+      <button type="button" class="tab ${verifyTab==='offline'?'on':''}" data-vtab="offline">Offline Proof (.json)</button>
     </div>
     <div id="vBody"></div>`;
 
   document.querySelectorAll('[data-vtab]').forEach(b=>b.onclick=()=>{
     verifyTab=b.dataset.vtab;
-    if(verifyTab==='bulk' && location.hash.includes('?')) location.hash='verify';
+    if(verifyTab!=='single' && location.hash.includes('?')) location.hash='verify';
     else verify();
   });
 
-  if(verifyTab==='bulk'){
-    renderBulkVerify();
-    return;
-  }
+  if(verifyTab==='bulk'){renderBulkVerify();return;}
+  if(verifyTab==='offline'){renderOfflineVerify();return;}
 
   $('#vBody').innerHTML=`
     <div class="panel noprint">
@@ -656,6 +660,7 @@ function verify(){
   else $('#vout').innerHTML=`<div class="panel"><div class="empty">Enter a Student ID above or scan the QR code on an official marksheet to verify its cryptographic proof.</div></div>`;
 }
 
+/* --- TAB 2: EMPLOYER BULK VERIFICATION --- */
 function renderBulkVerify(){
   $('#vBody').innerHTML=`
     <div class="panel noprint">
@@ -792,6 +797,149 @@ function renderBulkVerify(){
   };
 }
 
+/* --- TAB 3: ZERO-SERVER OFFLINE PROOF VERIFIER --- */
+function renderOfflineVerify(){
+  if(!pinnedKeys.ledger_pub){
+    try{const s=JSON.parse(localStorage.getItem('rl_pinned_keys')||'{}');if(s.ledger_pub)pinnedKeys=s;}catch{}
+  }
+  $('#vBody').innerHTML=`
+    <div class="panel noprint">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Zero-Server Offline Proof Verifier</h2>
+          <div class="panel-sub">Verifies a portable <code>proof-*.json</code> bundle purely in your browser using the pinned Ed25519 root key — zero database calls required.</div>
+        </div>
+        <span class="badge ${pinnedKeys.ledger_pub?'ok':'warn'}">${pinnedKeys.ledger_pub?'Root Key Pinned':'Paste Root Key Below'}</span>
+      </div>
+      <div class="panel-body">
+        <label class="dropzone" id="odz">
+          <div style="font-weight:600;font-size:13px">Drop an exported Proof Bundle (.json) here, or click to browse</div>
+          <div style="font-size:12px;color:var(--mute);margin-top:3px">Try editing marks inside the JSON file in Notepad and dropping it here to test forgery detection</div>
+          <input type="file" id="oFile" accept=".json,application/json" hidden>
+        </label>
+        <textarea id="oJson" placeholder='Paste exported proof JSON here (from "Export Proof JSON" on any verified credential)…'></textarea>
+        <details style="margin-top:10px">
+          <summary style="cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2)">Pinned Ledger Root Public Key (Ed25519 PEM — Optional Override)</summary>
+          <textarea id="oPub" style="min-height:92px;margin-top:8px;font-size:11.5px" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----">${esc(pinnedKeys.ledger_pub||'')}</textarea>
+        </details>
+        <div class="between" style="margin-top:12px">
+          <span class="mono">100% client-side · Works even if the server is offline</span>
+          <button type="button" id="oRun">Verify Offline Bundle</button>
+        </div>
+      </div>
+    </div>
+    <div id="oOut"></div>`;
+
+  const readJsonFile=f=>{
+    if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{$('#oJson').value=String(rd.result||'');toast(`Loaded ${f.name}`);runOffline();};
+    rd.readAsText(f);
+  };
+  $('#oFile').onchange=e=>readJsonFile(e.target.files?.[0]);
+  const dz=$('#odz');
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag');};
+  dz.ondragleave=()=>dz.classList.remove('drag');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');readJsonFile(e.dataTransfer.files?.[0]);};
+
+  async function runOffline(){
+    const out=$('#oOut');
+    if(!hasSubtle){
+      out.innerHTML='<div class="status-bar err"><div class="status-lead"><div class="status-ico">!</div><div><div class="status-title">WebCrypto Unavailable</div><div class="status-desc">Offline verification requires HTTPS or localhost.</div></div></div></div>';
+      return;
+    }
+    let bundle;
+    try{bundle=JSON.parse($('#oJson').value);}
+    catch{
+      out.innerHTML='<div class="status-bar err"><div class="status-lead"><div class="status-ico">✕</div><div><div class="status-title">Malformed JSON Bundle</div><div class="status-desc">Could not parse the uploaded file as valid JSON.</div></div></div></div>';
+      return;
+    }
+    if(!bundle?.record||!bundle?.batch||!Array.isArray(bundle?.proof)){
+      out.innerHTML='<div class="status-bar err"><div class="status-lead"><div class="status-ico">✕</div><div><div class="status-title">Incomplete Proof Bundle</div><div class="status-desc">Expected fields: <code>record</code>, <code>leaf</code>, <code>proof[]</code>, and <code>batch</code>.</div></div></div></div>';
+      return;
+    }
+
+    const pubPem=$('#oPub').value.trim()||pinnedKeys.ledger_pub;
+    if(!pubPem){
+      out.innerHTML='<div class="status-bar warn"><div class="status-lead"><div class="status-ico">!</div><div><div class="status-title">Pinned Public Key Required</div><div class="status-desc">Paste the registry Ed25519 public key (from Trust Anchors) so the signature can be verified offline.</div></div></div></div>';
+      return;
+    }
+
+    const t0=performance.now();
+    const r=bundle.record, b=bundle.batch;
+    const calcLeaf=await leafOf(r);
+    const {root:calcRoot,steps}=await traceMerkle(calcLeaf,bundle.proof);
+    const calcHead=await headOf(b);
+    const sigOk=await verifyEd25519(pubPem,b.head,b.sig);
+
+    const leafOk=calcLeaf===bundle.leaf;
+    const rootOk=calcRoot===b.root;
+    const headOk=calcHead===b.head;
+
+    let corrOk=true, corrChecked=false;
+    if(r.version>1){
+      corrChecked=true;
+      const d=await corrDigestOf(r);
+      const validAdmins=new Set();
+      const adminPubs=pinnedKeys.admin_pubs||{};
+      let hasAnyPub=false;
+      for(const [aid,sig] of (r.approvals||[])){
+        const apub=adminPubs[aid];
+        if(!apub)continue;
+        hasAnyPub=true;
+        if(await verifyEd25519(apub,d,sig)===true) validAdmins.add(aid);
+      }
+      corrOk=hasAnyPub?validAdmins.size>=2:null;
+    }
+
+    const valid=leafOk&&rootOk&&headOk&&sigOk===true&&corrOk!==false;
+    const ms=(performance.now()-t0).toFixed(1);
+
+    const chkRow=(name,detail,ok)=>`<div class="check-item">
+      <div class="check-left">
+        <span class="check-dot ${ok===null?'na':ok?'ok':'err'}"></span>
+        <div>
+          <div style="font-weight:500">${name}</div>
+          <div style="font-size:11.5px;color:var(--mute)">${detail}</div>
+        </div>
+      </div>
+      <span class="badge ${ok===null?'warn':ok?'ok':'err'}">${ok===null?'KEY NOT CACHED':ok?'PASS':'FAIL'}</span>
+    </div>`;
+
+    out.innerHTML=`
+      <div class="status-bar ${valid?'ok':'err'}">
+        <div class="status-lead">
+          <div class="status-ico">${valid?'✓':'✕'}</div>
+          <div>
+            <div class="status-title">${valid?'Offline Proof Cryptographically Valid':'Offline Verification Failed — Forged or Altered Bundle'}</div>
+            <div class="status-desc">${valid?`Verified 100% locally in ${ms} ms against the pinned Ed25519 root key with zero server requests.`:'One or more cryptographic invariants failed. The record, Merkle proof, or batch signature has been altered.'}</div>
+          </div>
+        </div>
+        <span class="badge ${valid?'ok':'err'}">ZERO-SERVER</span>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-k">Student ID</div><div class="stat-v">${esc(r.student_id)}</div></div>
+        <div class="stat-cell"><div class="stat-k">Course</div><div class="stat-v">${esc(r.course)}</div></div>
+        <div class="stat-cell"><div class="stat-k">Marks in Bundle</div><div class="stat-v">${esc(r.marks)} <span style="font-size:13px;color:var(--mute);font-weight:500">/ 100</span></div></div>
+        <div class="stat-cell"><div class="stat-k">Version &amp; Batch</div><div class="stat-v">v${esc(r.version)} · #${esc(b.n)}</div><div class="stat-s">${ms} ms offline</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Offline Cryptographic Checks</h2><span class="mono">No API calls made</span></div>
+        <div class="check-list">
+          ${chkRow('Canonical Leaf Digest','Recomputed SHA-256(0x00 || record) matches bundle.leaf',leafOk)}
+          ${chkRow('Merkle Inclusion Proof',`${steps.length} fold step${steps.length===1?'':'s'} reconstruct batch.root`,rootOk)}
+          ${chkRow('Batch Header Integrity','Recomputed SHA-256 header digest matches batch.head',headOk)}
+          ${chkRow('Ed25519 Root Signature','batch.sig verified against pinned Ledger Root Public Key',sigOk)}
+          ${corrChecked?chkRow('Two-Admin Multi-Sig Attestation','2 distinct registrar Ed25519 signatures over correction digest',corrOk):''}
+        </div>
+      </div>`;
+  }
+  $('#oRun').onclick=runOffline;
+}
+
+/* --- TAB 1: SINGLE CREDENTIAL VERIFIER --- */
 async function runVerify(s,c,h){
   const out=$('#vout');
   if(!hasSubtle){
@@ -975,14 +1123,13 @@ async function runVerify(s,c,h){
     const v=verifiedItems[Number(b.dataset.dlproof)];
     downloadJson(`proof-${v.x.record.student_id}-${v.x.record.course}-v${v.x.record.version}.json`,{
       protocol:'result-ledger-v1',
-      verified_at:new Date().toISOString(),
-      client_verified:v.valid,
+      exported_at:new Date().toISOString(),
       record:v.x.record,
       leaf:v.leaf,
       proof:v.x.proof,
       batch:v.x.batch
     });
-    toast('Cryptographic proof bundle downloaded');
+    toast('Offline proof bundle downloaded');
   });
 }
 
