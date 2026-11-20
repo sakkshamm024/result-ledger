@@ -1,0 +1,21 @@
+{
+  "name": "result-ledger",
+  "version": "1.0.0",
+  "description": "Tamper-proof exam result ledger (Code Fuzion H8)",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings test.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
