@@ -1,97 +1,350 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Result Ledger</title>
+<title>Result Ledger — Tamper-Proof Exam Verification</title>
 <style>
-:root{--bg:#f2f5f3;--ink:#12263a;--mute:#566574;--line:#cfd8d3;--card:#fff;--seal:#0b7a5a;--bad:#b42318;--warn:#9a6700;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1a22;--ink:#e6edf1;--mute:#93a4b0;--line:#264050;--card:#14252f;--seal:#3ccf9e;--bad:#ff8a80;--warn:#f0b429}}
+:root{--bg:#f2f5f3;--ink:#12263a;--mute:#566574;--line:#cfd8d3;--card:#fff;--seal:#0b7a5a;--bad:#b42318;--warn:#9a6700;--chip:#e7f3ef;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a22;--ink:#e6edf1;--mute:#93a4b0;--line:#264050;--card:#14252f;--seal:#3ccf9e;--bad:#ff8a80;--warn:#f0b429;--chip:#17353d}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{padding:20px 20px 0;max-width:880px;margin:auto}h1{font:700 1.6rem Georgia,serif;margin:0}
+header{padding:20px 20px 0;max-width:920px;margin:auto}
+.top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+h1{font:700 1.6rem Georgia,serif;margin:0}
+.sub{color:var(--mute);font-size:.88rem}
 nav{display:flex;gap:4px;margin:14px 0 0;border-bottom:1px solid var(--line)}
-nav a{padding:8px 14px;color:var(--mute);text-decoration:none;border-bottom:3px solid transparent}nav a.on{color:var(--ink);border-color:var(--seal);font-weight:600}
-main{max-width:880px;margin:auto;padding:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+nav a{padding:8px 14px;color:var(--mute);text-decoration:none;border-bottom:3px solid transparent}
+nav a.on{color:var(--ink);border-color:var(--seal);font-weight:600}
+main{max-width:920px;margin:auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
 input,textarea,button{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink)}
 textarea{width:100%;min-height:110px;font-family:ui-monospace,monospace;font-size:.85rem}
-button{background:var(--seal);color:#fff;border-color:var(--seal);cursor:pointer;font-weight:600}button.ghost{background:none;color:var(--ink);border-color:var(--line)}
+button{background:var(--seal);color:#fff;border-color:var(--seal);cursor:pointer;font-weight:600}
+button.ghost{background:none;color:var(--ink);border-color:var(--line)}
+button.sm{padding:4px 9px;font-size:.85rem}
 button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
-table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
 .verdict{font:700 1.3rem Georgia,serif}.good{color:var(--seal)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-.check{margin:4px 0}.mono{font:.78rem ui-monospace,monospace;word-break:break-all;color:var(--mute)}
-.msg{min-height:1.5em;font-weight:600}img.qr{width:140px;height:140px;background:#fff;border:1px solid var(--line)}
-@media print{header,nav,.noprint{display:none}}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.76rem;font-weight:600;background:var(--chip);color:var(--seal)}
+.badge.old{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.check{margin:4px 0;font-size:.94rem}
+.mono{font:.78rem ui-monospace,monospace;word-break:break-all;color:var(--mute)}
+.msg{min-height:1.4em;font-weight:600;margin:6px 0 0}
+img.qr{width:140px;height:140px;background:#fff;border:1px solid var(--line);padding:4px;border-radius:4px}
+.sheet{background:#fff;color:#12263a;border:2px solid #12263a;border-radius:8px;padding:24px}
+.sheet .mono{color:#4b5b6b}
+.sheet-grid{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;margin-top:16px}
+@media (max-width:600px){.sheet-grid{grid-template-columns:1fr}}
+@media print{body{background:#fff;color:#000}header,nav,.noprint{display:none!important}.sheet{border:2px solid #000;box-shadow:none}}
 </style></head><body>
-<header><h1>Result Ledger</h1>
-<nav><a href="#verify" id="t-verify">Verify a result</a><a href="#admin" id="t-admin">Registrar</a><a href="#audit" id="t-audit">Audit</a></nav></header>
+<header>
+  <div class="top"><h1>Result Ledger</h1><span class="sub">Cryptographic Exam Result Verification</span></div>
+  <nav>
+    <a href="#verify" id="t-verify">Verify a result</a>
+    <a href="#admin" id="t-admin">Registrar</a>
+    <a href="#audit" id="t-audit">Audit</a>
+  </nav>
+</header>
 <main id="app"></main>
 <script>
 const $=s=>document.querySelector(s), app=$('#app'), enc=encodeURIComponent;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const GENESIS='0'.repeat(64);
+const hasSubtle=!!(globalThis.crypto&&crypto.subtle);
+
 const sha=async b=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('');
+const shaStr=s=>sha(new TextEncoder().encode(s));
 const hexB=h=>Uint8Array.from(h.match(/../g)||[],x=>parseInt(x,16));
 const cat=(...a)=>{const o=new Uint8Array(a.reduce((n,x)=>n+x.length,0));let i=0;a.forEach(x=>{o.set(x,i);i+=x.length});return o};
+
+// Must match lib/ledger.js byte-for-byte
 const canon=r=>JSON.stringify(['v1',r.batch,r.student_id,r.course,Number(r.marks),r.version,r.supersedes||null,r.reason||'',r.approvals||[]]);
 const leafOf=r=>sha(cat(Uint8Array.of(0),new TextEncoder().encode(canon(r))));
-async function rootOf(leaf,proof){let h=leaf;for(const s of proof){const a=hexB(s.hash),b=hexB(h);h=await sha(cat(Uint8Array.of(1),...(s.side==='L'?[a,b]:[b,a])))}return h}
-const api=async(p,body,tok)=>{const r=await fetch(p,{method:body?'POST':'GET',headers:{'content-type':'application/json','x-token':tok||''},body:body&&JSON.stringify(body)});return{ok:r.ok,j:await r.json()}};
+const headOf=c=>shaStr(JSON.stringify(['hdr',c.n,c.root,c.prev,c.count,c.ts]));
+const corrDigestOf=r=>shaStr(JSON.stringify(['corr',r.student_id,r.course,Number(r.marks),r.reason,r.supersedes]));
+async function rootOf(leaf,proof){
+  let h=leaf;
+  for(const s of proof){
+    const a=hexB(s.hash),b=hexB(h);
+    h=await sha(cat(Uint8Array.of(1),...(s.side==='L'?[a,b]:[b,a])));
+  }
+  return h;
+}
+
+const keyCache=new Map();
+function pemToDer(pem){
+  const b64=pem.replace(/-----[^-]+-----|\s+/g,'');
+  return Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+}
+async function verifyEd25519(pubPem,msgHex,sigHex){
+  if(!hasSubtle)return null;
+  try{
+    let k=keyCache.get(pubPem);
+    if(!k){
+      k=await crypto.subtle.importKey('spki',pemToDer(pubPem),{name:'Ed25519'},false,['verify']);
+      keyCache.set(pubPem,k);
+    }
+    return await crypto.subtle.verify('Ed25519',k,hexB(sigHex),hexB(msgHex));
+  }catch{return null;}
+}
+
+const api=async(p,body,tok)=>{
+  const r=await fetch(p,{method:body?'POST':'GET',headers:{'content-type':'application/json','x-token':tok||''},body:body&&JSON.stringify(body)});
+  return{ok:r.ok,status:r.status,j:await r.json()};
+};
 const qrLink=r=>`${location.origin}/#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}`;
+const sheetLink=r=>`#marksheet?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}`;
 const hashArgs=()=>new URLSearchParams(location.hash.split('?')[1]||'');
 
-function route(){const v=(location.hash.slice(1).split('?')[0])||'verify';['verify','admin','audit'].forEach(t=>$('#t-'+t).classList.toggle('on',t===v));({verify,admin,audit})[v]?.()}
+function route(){
+  const v=(location.hash.slice(1).split('?')[0])||'verify';
+  ['verify','admin','audit'].forEach(t=>$('#t-'+t).classList.toggle('on',t===v));
+  ({verify,admin,audit,marksheet})[v]?.();
+}
 addEventListener('hashchange',route);addEventListener('load',route);
 
 function verify(){
   const q=hashArgs();
-  app.innerHTML=`<div class=card><p>Enter the student ID printed on the marksheet, or scan its QR code with a phone camera.</p>
-  <form class=row id=f><input id=s placeholder="Student ID" value="${esc(q.get('s')||'')}" required aria-label="Student ID"><input id=c placeholder="Course (optional)" value="${esc(q.get('c')||'')}" aria-label="Course"><button>Verify</button></form></div><div id=out></div>`;
-  $('#f').onsubmit=e=>{e.preventDefault();const p=new URLSearchParams({s:$('#s').value.trim()});if($('#c').value.trim())p.set('c',$('#c').value.trim());if(q.get('h'))p.set('h',q.get('h'));location.hash='verify?'+p;};
-  if(q.get('s'))run(q.get('s'),q.get('c'),q.get('h'));
+  app.innerHTML=`<div class="card noprint"><p>Enter the student ID printed on the marksheet, or scan its QR code with a phone camera.</p>
+  <form class="row" id="f">
+    <input id="s" placeholder="Student ID" value="${esc(q.get('s')||'')}" required aria-label="Student ID">
+    <input id="c" placeholder="Course (optional)" value="${esc(q.get('c')||'')}" aria-label="Course">
+    <button>Verify</button>
+  </form></div><div id="out"></div>`;
+  // Manual search drops any previous QR leaf hash (?h=) so searching another student never triggers a false forgery alert
+  $('#f').onsubmit=e=>{
+    e.preventDefault();
+    const p=new URLSearchParams({s:$('#s').value.trim()});
+    if($('#c').value.trim())p.set('c',$('#c').value.trim());
+    location.hash='verify?'+p;
+  };
+  if(q.get('s'))runVerify(q.get('s'),q.get('c'),q.get('h'));
 }
-async function run(s,c,h){
-  const out=$('#out');out.innerHTML='<p>Checking…</p>';
+
+async function runVerify(s,c,h){
+  const out=$('#out');
+  if(!hasSubtle){
+    out.innerHTML=`<div class="card"><div class="verdict bad">Secure context required</div><p>Browser WebCrypto (<code>crypto.subtle</code>) requires <b>HTTPS</b> or <b>localhost</b> to recompute cryptographic proofs locally.</p></div>`;
+    return;
+  }
+  out.innerHTML='<p>Recomputing cryptographic proofs in browser…</p>';
   const [{j:res},{j:cp}]=await Promise.all([api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`),api('/api/checkpoints')]);
-  if(!res.results?.length){out.innerHTML=`<div class=card><div class="verdict bad">No result found</div><p>No published result exists for “${esc(s)}”. Check the ID or ask the registrar.</p></div>`;return}
+  if(!res.results?.length){
+    out.innerHTML=`<div class="card"><div class="verdict bad">No result found</div><p>No published result exists for “${esc(s)}”. Check the ID or ask the registrar.</p></div>`;
+    return;
+  }
+
+  // Verify the entire checkpoint hash chain up to each batch
+  const cpMap=new Map();
+  let prev=GENESIS, chainBroken=false;
+  for(const k of cp.checkpoints){
+    const calcHead=await headOf(k);
+    const sigOk=await verifyEd25519(cp.ledger_pub,k.head,k.sig);
+    const linkOk=k.prev===prev && calcHead===k.head && !chainBroken;
+    if(!linkOk || sigOk===false) chainBroken=true;
+    cpMap.set(k.n,{cp:k,linkOk,sigOk});
+    prev=k.head;
+  }
+
   const cards=[];
   for(const x of res.results){
-    const leaf=await leafOf(x.record), cpb=cp.checkpoints.find(k=>k.n===x.record.batch);
-    const calc=await rootOf(leaf,x.proof), leafOk=leaf===x.leaf, rootOk=!!cpb&&calc===cpb.root;
-    const qrOk=h?h===leaf:null, valid=leafOk&&rootOk&&qrOk!==false;
-    const verdict=!valid?['Not valid','bad']:x.superseded?['Authentic, but replaced by a correction','warn']:['Authentic and current','good'];
-    const ch=(t,ok)=>`<div class=check>${ok?'✔':'✘'} <span class=${ok?'good':'bad'}>${t}</span></div>`;
-    cards.push(`<div class=card><div class="verdict ${verdict[1]}">${verdict[0]}</div>
-      <p><b>${esc(x.record.student_id)}</b> · ${esc(x.record.course)} · <b>${x.record.marks}</b> marks · version ${x.record.version}${x.record.reason?`<br>Correction reason: ${esc(x.record.reason)} (approved by ${x.record.approvals.map(a=>esc(a[0])).join(' and ')})`:''}</p>
-      ${ch('Result recomputes to the published hash',leafOk)}${ch('Merkle proof leads to the signed batch root',rootOk)}${h?ch('QR code matches this exact result',qrOk):''}
-      <div class=mono>leaf ${leaf}<br>root ${calc}<br>signed head ${x.batch.head} (batch ${x.batch.n})</div></div>`);
+    const leaf=await leafOf(x.record);
+    const meta=cpMap.get(x.record.batch);
+    const cpb=meta?.cp;
+    const calcRoot=await rootOf(leaf,x.proof);
+    const leafOk=leaf===x.leaf;
+    const rootOk=!!cpb&&calcRoot===cpb.root;
+    const chainOk=!!meta?.linkOk;
+    const sigOk=meta ? meta.sigOk : false; // true, false, or null (browser unsupported)
+
+    let corrOk=true, corrChecked=false;
+    if(x.record.version>1){
+      corrChecked=true;
+      const d=await corrDigestOf(x.record);
+      const validAdmins=new Set();
+      let unsupported=false;
+      for(const [aid,sig] of (x.record.approvals||[])){
+        const pub=cp.admin_pubs?.[aid];
+        if(!pub) continue;
+        const ok=await verifyEd25519(pub,d,sig);
+        if(ok===null){unsupported=true;break;}
+        if(ok) validAdmins.add(aid);
+      }
+      corrOk=unsupported ? null : validAdmins.size>=2;
+    }
+
+    const qrOk=h?h===leaf:null;
+    const valid=leafOk&&rootOk&&chainOk&&sigOk!==false&&corrOk!==false&&qrOk!==false;
+    const verdict=!valid?['Not valid — tampering detected','bad']:x.superseded?['Authentic, but replaced by a correction','warn']:['Authentic and current','good'];
+    const ch=(t,ok)=>ok===null
+      ? `<div class="check">ℹ <span class="warn">${t} (Ed25519 browser API unavailable; verified by server audit)</span></div>`
+      : `<div class="check">${ok?'✔':'✘'} <span class="${ok?'good':'bad'}">${t}</span></div>`;
+
+    cards.push(`<div class="card">
+      <div class="between">
+        <div class="verdict ${verdict[1]}">${verdict[0]}</div>
+        <a href="${sheetLink({student_id:x.record.student_id,course:x.record.course,leaf:x.leaf})}" class="noprint"><button type="button" class="ghost sm">Open marksheet</button></a>
+      </div>
+      <p><b>${esc(x.record.student_id)}</b> · ${esc(x.record.course)} · <b>${x.record.marks}</b> marks · version ${x.record.version}
+      ${x.record.reason?`<br>Correction reason: ${esc(x.record.reason)} (signed by ${x.record.approvals.map(a=>esc(a[0])).join(' and ')})`:''}</p>
+      ${ch('Result recomputes to the published leaf hash',leafOk)}
+      ${ch('Merkle inclusion proof matches the external checkpoint root',rootOk)}
+      ${ch('Batch header & hash-chain linkage verified from genesis',chainOk)}
+      ${ch('Ledger Ed25519 signature verified in browser',sigOk)}
+      ${corrChecked?ch('Two distinct admin Ed25519 correction signatures verified',corrOk):''}
+      ${h?ch('QR code hash matches this exact record',qrOk):''}
+      <div class="mono" style="margin-top:8px">leaf ${leaf}<br>root ${calcRoot}<br>signed head ${x.batch.head} (batch #${x.batch.n}, ${new Date(x.batch.ts).toLocaleString()})</div>
+    </div>`);
   }
   const anyQr=h&&res.results.some(x=>x.leaf===h);
-  out.innerHTML=(h&&!anyQr?`<div class=card><div class="verdict bad">QR code does not match any issued result</div><p>This QR was not produced by the registrar for this student. Treat the marksheet as forged.</p></div>`:'')+cards.join('');
+  out.innerHTML=(h&&!anyQr?`<div class="card"><div class="verdict bad">QR code does not match any issued result</div><p>This QR hash does not match any published record for this student. Treat the marksheet as forged.</p></div>`:'')+cards.join('');
+}
+
+async function marksheet(){
+  const q=hashArgs(), s=q.get('s')||'', c=q.get('c')||'', h=q.get('h')||'';
+  if(!s){app.innerHTML=`<div class="card"><p>Missing student details. <a href="#verify">Go to verify</a>.</p></div>`;return;}
+  app.innerHTML='<p>Loading marksheet…</p>';
+  const {j:res}=await api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`);
+  const match=(res.results||[]).find(x=>h?x.leaf===h:!x.superseded) || res.results?.[0];
+  if(!match){app.innerHTML=`<div class="card"><div class="verdict bad">Marksheet not found</div></div>`;return;}
+  const r=match.record, link=qrLink({student_id:r.student_id,course:r.course,leaf:match.leaf});
+  app.innerHTML=`
+    <div class="row noprint">
+      <button onclick="window.print()">Print / Save PDF</button>
+      <a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${match.leaf}"><button type="button" class="ghost">Verify this QR link</button></a>
+      <button type="button" class="ghost" onclick="history.back()">Back</button>
+    </div>
+    <div class="sheet">
+      <div class="between" style="border-bottom:2px solid #12263a;padding-bottom:10px">
+        <div>
+          <h2 style="margin:0;font-family:Georgia,serif">Official Examination Result</h2>
+          <div style="font-size:.88rem;color:#4b5b6b">Cryptographically Anchored Append-Only Ledger</div>
+        </div>
+        <span class="badge ${match.superseded?'old':''}">${match.superseded?'SUPERSEDED VERSION':'CURRENT RECORD'}</span>
+      </div>
+      <div class="sheet-grid">
+        <div>
+          <table>
+            <tr><th>Student ID</th><td><b>${esc(r.student_id)}</b></td></tr>
+            <tr><th>Course</th><td>${esc(r.course)}</td></tr>
+            <tr><th>Marks Awarded</th><td><b style="font-size:1.2rem">${r.marks} / 100</b></td></tr>
+            <tr><th>Record Version</th><td>v${r.version} (Batch #${match.batch.n})</td></tr>
+            <tr><th>Published At</th><td>${new Date(match.batch.ts).toLocaleString()}</td></tr>
+            ${r.reason?`<tr><th>Correction Reason</th><td>${esc(r.reason)}</td></tr>
+            <tr><th>Signed Approvals</th><td>${r.approvals.map(a=>esc(a[0])).join(', ')}</td></tr>`:''}
+          </table>
+        </div>
+        <div style="text-align:center">
+          <img class="qr" alt="Verification QR" src="/api/qr?text=${enc(link)}">
+          <div style="font-size:.78rem;margin-top:4px;color:#4b5b6b">Scan to verify publicly</div>
+        </div>
+      </div>
+      <div class="mono" style="margin-top:16px;padding-top:12px;border-top:1px solid #cfd8d3">
+        <b>Verification URL:</b> ${esc(link)}<br>
+        <b>Leaf Hash (SHA-256):</b> ${match.leaf}<br>
+        <b>Batch Merkle Root:</b> ${match.batch.root}<br>
+        <b>Signed Batch Head:</b> ${match.batch.head}
+      </div>
+    </div>`;
 }
 
 function admin(){
   const tok=sessionStorage.tok||'';
-  app.innerHTML=`<div class="card noprint"><div class=row><input id=tok type=password placeholder="Admin token" value="${esc(tok)}" aria-label="Admin token"><button class=ghost id=load>Sign in</button></div>
-  <p class=msg id=msg></p></div><div id=body></div>`;
+  app.innerHTML=`<div class="card noprint">
+    <div class="row">
+      <input id="tok" type="password" placeholder="Admin token (a1 / a2 / a3)" value="${esc(tok)}" aria-label="Admin token" style="min-width:240px">
+      <button class="ghost" id="load">Sign in</button>
+      <button class="ghost" id="signout" style="display:none">Switch admin</button>
+      <span id="who" class="badge" style="display:none"></span>
+    </div>
+    <p class="msg" id="msg"></p>
+  </div><div id="body"></div>`;
   const msg=(t,bad)=>{$('#msg').className='msg '+(bad?'bad':'good');$('#msg').textContent=t};
   const T=()=>sessionStorage.tok=$('#tok').value.trim();
+
+  $('#signout').onclick=()=>{
+    sessionStorage.removeItem('tok');$('#tok').value='';$('#who').style.display='none';
+    $('#signout').style.display='none';$('#body').innerHTML='';msg('Signed out. Enter another admin token to switch.');
+    $('#tok').focus();
+  };
+
   async function load(){
     const {ok,j}=await api('/api/records',null,T());
-    if(!ok){$('#body').innerHTML='';return msg(j.error,true)}
-    $('#body').innerHTML=`<div class="card noprint"><b>Publish results</b><p class=mono>CSV columns: student_id,course,marks</p><textarea id=csv placeholder="REG12345,CSE101,82"></textarea><button id=pub>Publish batch</button></div>
-    <div class="card noprint"><b>Propose a correction</b> (needs two different admins to approve)<div class=row><input id=cs placeholder="Student ID"><input id=cc placeholder="Course"><input id=cm type=number placeholder="New marks"><input id=cr placeholder="Reason" size=24><button id=prop>Propose</button></div>
-    ${j.pending.length?`<table><tr><th>#</th><th>Student</th><th>Course</th><th>Marks</th><th>Reason</th><th>Approved by</th><th></th></tr>${j.pending.map(p=>`<tr><td>${p.id}</td><td>${esc(p.student_id)}</td><td>${esc(p.course)}</td><td>${p.marks}</td><td>${esc(p.reason)}</td><td>${p.approvals.join(', ')||'-'}</td><td><button data-ap=${p.id}>Approve</button></td></tr>`).join('')}</table>`:'<p class=mono>No corrections waiting.</p>'}</div>
-    <div class=card><b>Published records</b> <button class="ghost noprint" onclick=print()>Print marksheets</button><table><tr><th>Student</th><th>Course</th><th>Marks</th><th>v</th><th>QR</th></tr>
-    ${j.records.map(r=>`<tr><td>${esc(r.student_id)}</td><td>${esc(r.course)}</td><td>${r.marks}</td><td>${r.version}</td><td><img class=qr loading=lazy alt="QR for ${esc(r.student_id)} ${esc(r.course)}" src="/api/qr?text=${enc(qrLink(r))}" style="width:80px;height:80px"></td></tr>`).join('')}</table></div>`;
-    $('#pub').onclick=async()=>{const r=await api('/api/publish',{csv:$('#csv').value},T());r.ok?(msg(`Published batch ${r.j.n} with ${r.j.count} results`),load()):msg(r.j.error,true)};
-    $('#prop').onclick=async()=>{const r=await api('/api/corrections',{student_id:$('#cs').value.trim(),course:$('#cc').value.trim(),marks:$('#cm').value,reason:$('#cr').value},T());r.ok?(msg(`Correction ${r.j.id} proposed. Now approve it with two different admin tokens.`),load()):msg(r.j.error,true)};
-    document.querySelectorAll('[data-ap]').forEach(b=>b.onclick=async()=>{const r=await api(`/api/corrections/${b.dataset.ap}/approve`,{},T());r.ok?(msg(r.j.status==='published'?`Correction published in batch ${r.j.n}`:'Approved. Waiting for a second admin.'),load()):msg(r.j.error,true)});
+    if(!ok){$('#body').innerHTML='';$('#who').style.display='none';$('#signout').style.display='none';return msg(j.error,true);}
+    $('#who').textContent=`Signed in as ${j.admin}`;$('#who').style.display='inline-block';$('#signout').style.display='inline-block';
+    const maxVer=new Map();
+    j.records.forEach(r=>{const k=r.student_id+'|'+r.course;maxVer.set(k,Math.max(maxVer.get(k)||0,r.version));});
+
+    $('#body').innerHTML=`
+      <div class="card noprint">
+        <b>Publish results batch</b>
+        <p class="mono">CSV columns: student_id,course,marks (one result per line)</p>
+        <textarea id="csv" placeholder="student_id,course,marks&#10;REG12345,CSE101,82&#10;REG12346,CSE101,91"></textarea>
+        <div class="row"><button id="pub">Publish batch</button></div>
+      </div>
+      <div class="card noprint">
+        <b>Propose &amp; approve a correction</b> <span class="sub">(requires 2 distinct admin Ed25519 signatures)</span>
+        <div class="row">
+          <input id="cs" placeholder="Student ID">
+          <input id="cc" placeholder="Course">
+          <input id="cm" type="number" step="any" min="0" max="100" placeholder="New marks">
+          <input id="cr" placeholder="Documented reason (min 5 chars)" size="28">
+          <button id="prop">Propose</button>
+        </div>
+        ${j.pending.length?`<table><tr><th>#</th><th>Student</th><th>Course</th><th>Marks</th><th>Reason</th><th>Signed by</th><th></th></tr>
+          ${j.pending.map(p=>`<tr><td>${p.id}</td><td>${esc(p.student_id)}</td><td>${esc(p.course)}</td><td>${p.marks}</td><td>${esc(p.reason)}</td><td>${p.approvals.join(', ')||'-'}</td><td><button class="sm" data-ap="${p.id}">Sign &amp; Approve</button></td></tr>`).join('')}
+        </table>`:'<p class="mono">No pending corrections waiting for approval.</p>'}
+      </div>
+      <div class="card">
+        <div class="between"><b>Published ledger records (${j.records.length})</b><button class="ghost sm noprint" onclick="window.print()">Print table</button></div>
+        ${j.records.length?`<table><tr><th>Batch</th><th>Student</th><th>Course</th><th>Marks</th><th>Version</th><th>QR</th><th class="noprint">Actions</th></tr>
+          ${j.records.map(r=>{
+            const isOld=r.version<maxVer.get(r.student_id+'|'+r.course);
+            return `<tr>
+              <td>#${r.batch}</td>
+              <td><b>${esc(r.student_id)}</b></td>
+              <td>${esc(r.course)}</td>
+              <td>${r.marks}</td>
+              <td>v${r.version} ${isOld?'<span class="badge old">superseded</span>':'<span class="badge">current</span>'}</td>
+              <td><img class="qr" loading="lazy" alt="QR for ${esc(r.student_id)} ${esc(r.course)}" src="/api/qr?text=${enc(qrLink(r))}" style="width:72px;height:72px"></td>
+              <td class="noprint"><a href="${sheetLink(r)}"><button type="button" class="ghost sm">Marksheet</button></a></td>
+            </tr>`;
+          }).join('')}
+        </table>`:'<p class="mono">No results published yet.</p>'}
+      </div>`;
+
+    $('#pub').onclick=async()=>{
+      const r=await api('/api/publish',{csv:$('#csv').value},T());
+      r.ok?(msg(`Published batch #${r.j.n} (${r.j.count} results). Merkle root: ${r.j.root.slice(0,16)}…`),load()):msg(r.j.error,true);
+    };
+    $('#prop').onclick=async()=>{
+      const r=await api('/api/corrections',{student_id:$('#cs').value.trim(),course:$('#cc').value.trim(),marks:$('#cm').value,reason:$('#cr').value},T());
+      r.ok?(msg(`Correction #${r.j.id} proposed. Sign with two different admin tokens to publish.`),load()):msg(r.j.error,true);
+    };
+    document.querySelectorAll('[data-ap]').forEach(b=>b.onclick=async()=>{
+      const r=await api(`/api/corrections/${b.dataset.ap}/approve`,{},T());
+      r.ok?(msg(r.j.status==='published'?`Correction published in batch #${r.j.n} with 2 signed approvals.`:`Signed by ${j.admin}. Switch admin token for the second signature.`),load()):msg(r.j.error,true);
+    });
   }
-  $('#load').onclick=load;if(tok)load();
+  $('#load').onclick=load;
+  $('#tok').onkeydown=e=>{if(e.key==='Enter')load();};
+  if(tok)load();
 }
 
 async function audit(){
-  app.innerHTML=`<div class=card><p>The audit recomputes every hash, Merkle root and chain link from the database rows and compares them with the signed checkpoints stored outside the database.</p><button id=go>Run audit</button></div><div id=out></div>`;
-  $('#go').onclick=async()=>{const {j}=await api('/api/audit');
-    $('#out').innerHTML=`<div class=card><div class="verdict ${j.ok?'good':'bad'}">${j.ok?'Ledger intact':`${j.issues.length} problem${j.issues.length>1?'s':''} found`}</div><p>${j.batches} batches, ${j.records} records checked at ${new Date(j.checked_at).toLocaleTimeString()}.</p>
-    ${j.issues.length?`<table><tr><th>Batch</th><th>Row</th><th>Problem</th></tr>${j.issues.map(i=>`<tr><td>${i.batch}</td><td>${i.student?esc(i.student)+' / '+esc(i.course):'-'}</td><td>${esc(i.problem)}</td></tr>`).join('')}</table>`:''}</div>`};
+  app.innerHTML=`<div class="card"><p>Recomputes every leaf hash, Merkle root, hash-chain link, Ed25519 signature, and pending correction digest from SQLite and cross-checks them against external signed checkpoints.</p><button id="go">Run full audit</button></div><div id="out"></div>`;
+  $('#go').onclick=async()=>{
+    $('#out').innerHTML='<p>Auditing ledger…</p>';
+    const {j}=await api('/api/audit');
+    $('#out').innerHTML=`<div class="card"><div class="verdict ${j.ok?'good':'bad'}">${j.ok?'Ledger intact — zero tampering detected':`${j.issues.length} integrity problem${j.issues.length>1?'s':''} found`}</div>
+    <p>${j.batches} batches, ${j.records} records verified at ${new Date(j.checked_at).toLocaleTimeString()}.</p>
+    ${j.issues.length?`<table><tr><th>Scope</th><th>Row / Index</th><th>Detected Problem</th></tr>
+      ${j.issues.map(i=>`<tr>
+        <td>${i.batch===0?'Pending':`Batch #${i.batch}`}</td>
+        <td>${i.student?esc(i.student)+' / '+esc(i.course):'-'}${i.idx!==undefined?` (idx ${i.idx})`:''}</td>
+        <td class="bad">${esc(i.problem)}</td>
+      </tr>`).join('')}
+    </table>`:''}</div>`;
+  };
 }
 </script></body></html>
