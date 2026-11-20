@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Result Ledger</title>
+<style>
+:root{--bg:#f2f5f3;--ink:#12263a;--mute:#566574;--line:#cfd8d3;--card:#fff;--seal:#0b7a5a;--bad:#b42318;--warn:#9a6700;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a22;--ink:#e6edf1;--mute:#93a4b0;--line:#264050;--card:#14252f;--seal:#3ccf9e;--bad:#ff8a80;--warn:#f0b429}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 20px 0;max-width:880px;margin:auto}h1{font:700 1.6rem Georgia,serif;margin:0}
+nav{display:flex;gap:4px;margin:14px 0 0;border-bottom:1px solid var(--line)}
+nav a{padding:8px 14px;color:var(--mute);text-decoration:none;border-bottom:3px solid transparent}nav a.on{color:var(--ink);border-color:var(--seal);font-weight:600}
+main{max-width:880px;margin:auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+input,textarea,button{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink)}
+textarea{width:100%;min-height:110px;font-family:ui-monospace,monospace;font-size:.85rem}
+button{background:var(--seal);color:#fff;border-color:var(--seal);cursor:pointer;font-weight:600}button.ghost{background:none;color:var(--ink);border-color:var(--line)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.verdict{font:700 1.3rem Georgia,serif}.good{color:var(--seal)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.check{margin:4px 0}.mono{font:.78rem ui-monospace,monospace;word-break:break-all;color:var(--mute)}
+.msg{min-height:1.5em;font-weight:600}img.qr{width:140px;height:140px;background:#fff;border:1px solid var(--line)}
+@media print{header,nav,.noprint{display:none}}
+</style></head><body>
+<header><h1>Result Ledger</h1>
+<nav><a href="#verify" id="t-verify">Verify a result</a><a href="#admin" id="t-admin">Registrar</a><a href="#audit" id="t-audit">Audit</a></nav></header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s), app=$('#app'), enc=encodeURIComponent;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sha=async b=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('');
+const hexB=h=>Uint8Array.from(h.match(/../g)||[],x=>parseInt(x,16));
+const cat=(...a)=>{const o=new Uint8Array(a.reduce((n,x)=>n+x.length,0));let i=0;a.forEach(x=>{o.set(x,i);i+=x.length});return o};
+const canon=r=>JSON.stringify(['v1',r.batch,r.student_id,r.course,Number(r.marks),r.version,r.supersedes||null,r.reason||'',r.approvals||[]]);
+const leafOf=r=>sha(cat(Uint8Array.of(0),new TextEncoder().encode(canon(r))));
+async function rootOf(leaf,proof){let h=leaf;for(const s of proof){const a=hexB(s.hash),b=hexB(h);h=await sha(cat(Uint8Array.of(1),...(s.side==='L'?[a,b]:[b,a])))}return h}
+const api=async(p,body,tok)=>{const r=await fetch(p,{method:body?'POST':'GET',headers:{'content-type':'application/json','x-token':tok||''},body:body&&JSON.stringify(body)});return{ok:r.ok,j:await r.json()}};
+const qrLink=r=>`${location.origin}/#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}`;
+const hashArgs=()=>new URLSearchParams(location.hash.split('?')[1]||'');
+
+function route(){const v=(location.hash.slice(1).split('?')[0])||'verify';['verify','admin','audit'].forEach(t=>$('#t-'+t).classList.toggle('on',t===v));({verify,admin,audit})[v]?.()}
+addEventListener('hashchange',route);addEventListener('load',route);
+
+function verify(){
+  const q=hashArgs();
+  app.innerHTML=`<div class=card><p>Enter the student ID printed on the marksheet, or scan its QR code with a phone camera.</p>
+  <form class=row id=f><input id=s placeholder="Student ID" value="${esc(q.get('s')||'')}" required aria-label="Student ID"><input id=c placeholder="Course (optional)" value="${esc(q.get('c')||'')}" aria-label="Course"><button>Verify</button></form></div><div id=out></div>`;
+  $('#f').onsubmit=e=>{e.preventDefault();const p=new URLSearchParams({s:$('#s').value.trim()});if($('#c').value.trim())p.set('c',$('#c').value.trim());if(q.get('h'))p.set('h',q.get('h'));location.hash='verify?'+p;};
+  if(q.get('s'))run(q.get('s'),q.get('c'),q.get('h'));
+}
+async function run(s,c,h){
+  const out=$('#out');out.innerHTML='<p>Checking…</p>';
+  const [{j:res},{j:cp}]=await Promise.all([api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`),api('/api/checkpoints')]);
+  if(!res.results?.length){out.innerHTML=`<div class=card><div class="verdict bad">No result found</div><p>No published result exists for “${esc(s)}”. Check the ID or ask the registrar.</p></div>`;return}
+  const cards=[];
+  for(const x of res.results){
+    const leaf=await leafOf(x.record), cpb=cp.checkpoints.find(k=>k.n===x.record.batch);
+    const calc=await rootOf(leaf,x.proof), leafOk=leaf===x.leaf, rootOk=!!cpb&&calc===cpb.root;
+    const qrOk=h?h===leaf:null, valid=leafOk&&rootOk&&qrOk!==false;
+    const verdict=!valid?['Not valid','bad']:x.superseded?['Authentic, but replaced by a correction','warn']:['Authentic and current','good'];
+    const ch=(t,ok)=>`<div class=check>${ok?'✔':'✘'} <span class=${ok?'good':'bad'}>${t}</span></div>`;
+    cards.push(`<div class=card><div class="verdict ${verdict[1]}">${verdict[0]}</div>
+      <p><b>${esc(x.record.student_id)}</b> · ${esc(x.record.course)} · <b>${x.record.marks}</b> marks · version ${x.record.version}${x.record.reason?`<br>Correction reason: ${esc(x.record.reason)} (approved by ${x.record.approvals.map(a=>esc(a[0])).join(' and ')})`:''}</p>
+      ${ch('Result recomputes to the published hash',leafOk)}${ch('Merkle proof leads to the signed batch root',rootOk)}${h?ch('QR code matches this exact result',qrOk):''}
+      <div class=mono>leaf ${leaf}<br>root ${calc}<br>signed head ${x.batch.head} (batch ${x.batch.n})</div></div>`);
+  }
+  const anyQr=h&&res.results.some(x=>x.leaf===h);
+  out.innerHTML=(h&&!anyQr?`<div class=card><div class="verdict bad">QR code does not match any issued result</div><p>This QR was not produced by the registrar for this student. Treat the marksheet as forged.</p></div>`:'')+cards.join('');
+}
+
+function admin(){
+  const tok=sessionStorage.tok||'';
+  app.innerHTML=`<div class="card noprint"><div class=row><input id=tok type=password placeholder="Admin token" value="${esc(tok)}" aria-label="Admin token"><button class=ghost id=load>Sign in</button></div>
+  <p class=msg id=msg></p></div><div id=body></div>`;
+  const msg=(t,bad)=>{$('#msg').className='msg '+(bad?'bad':'good');$('#msg').textContent=t};
+  const T=()=>sessionStorage.tok=$('#tok').value.trim();
+  async function load(){
+    const {ok,j}=await api('/api/records',null,T());
+    if(!ok){$('#body').innerHTML='';return msg(j.error,true)}
+    $('#body').innerHTML=`<div class="card noprint"><b>Publish results</b><p class=mono>CSV columns: student_id,course,marks</p><textarea id=csv placeholder="REG12345,CSE101,82"></textarea><button id=pub>Publish batch</button></div>
+    <div class="card noprint"><b>Propose a correction</b> (needs two different admins to approve)<div class=row><input id=cs placeholder="Student ID"><input id=cc placeholder="Course"><input id=cm type=number placeholder="New marks"><input id=cr placeholder="Reason" size=24><button id=prop>Propose</button></div>
+    ${j.pending.length?`<table><tr><th>#</th><th>Student</th><th>Course</th><th>Marks</th><th>Reason</th><th>Approved by</th><th></th></tr>${j.pending.map(p=>`<tr><td>${p.id}</td><td>${esc(p.student_id)}</td><td>${esc(p.course)}</td><td>${p.marks}</td><td>${esc(p.reason)}</td><td>${p.approvals.join(', ')||'-'}</td><td><button data-ap=${p.id}>Approve</button></td></tr>`).join('')}</table>`:'<p class=mono>No corrections waiting.</p>'}</div>
+    <div class=card><b>Published records</b> <button class="ghost noprint" onclick=print()>Print marksheets</button><table><tr><th>Student</th><th>Course</th><th>Marks</th><th>v</th><th>QR</th></tr>
+    ${j.records.map(r=>`<tr><td>${esc(r.student_id)}</td><td>${esc(r.course)}</td><td>${r.marks}</td><td>${r.version}</td><td><img class=qr loading=lazy alt="QR for ${esc(r.student_id)} ${esc(r.course)}" src="/api/qr?text=${enc(qrLink(r))}" style="width:80px;height:80px"></td></tr>`).join('')}</table></div>`;
+    $('#pub').onclick=async()=>{const r=await api('/api/publish',{csv:$('#csv').value},T());r.ok?(msg(`Published batch ${r.j.n} with ${r.j.count} results`),load()):msg(r.j.error,true)};
+    $('#prop').onclick=async()=>{const r=await api('/api/corrections',{student_id:$('#cs').value.trim(),course:$('#cc').value.trim(),marks:$('#cm').value,reason:$('#cr').value},T());r.ok?(msg(`Correction ${r.j.id} proposed. Now approve it with two different admin tokens.`),load()):msg(r.j.error,true)};
+    document.querySelectorAll('[data-ap]').forEach(b=>b.onclick=async()=>{const r=await api(`/api/corrections/${b.dataset.ap}/approve`,{},T());r.ok?(msg(r.j.status==='published'?`Correction published in batch ${r.j.n}`:'Approved. Waiting for a second admin.'),load()):msg(r.j.error,true)});
+  }
+  $('#load').onclick=load;if(tok)load();
+}
+
+async function audit(){
+  app.innerHTML=`<div class=card><p>The audit recomputes every hash, Merkle root and chain link from the database rows and compares them with the signed checkpoints stored outside the database.</p><button id=go>Run audit</button></div><div id=out></div>`;
+  $('#go').onclick=async()=>{const {j}=await api('/api/audit');
+    $('#out').innerHTML=`<div class=card><div class="verdict ${j.ok?'good':'bad'}">${j.ok?'Ledger intact':`${j.issues.length} problem${j.issues.length>1?'s':''} found`}</div><p>${j.batches} batches, ${j.records} records checked at ${new Date(j.checked_at).toLocaleTimeString()}.</p>
+    ${j.issues.length?`<table><tr><th>Batch</th><th>Row</th><th>Problem</th></tr>${j.issues.map(i=>`<tr><td>${i.batch}</td><td>${i.student?esc(i.student)+' / '+esc(i.course):'-'}</td><td>${esc(i.problem)}</td></tr>`).join('')}</table>`:''}</div>`};
+}
+</script></body></html>
