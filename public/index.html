@@ -3,50 +3,64 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Result Ledger — Examination Verification Registry</title>
+<title>ResultLedger — Cryptographic Examination Registry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f8f7f4;
+  --bg:#fafafa;
   --surface:#ffffff;
-  --surface-2:#f1efe9;
-  --ink:#141619;
-  --ink-2:#3b414b;
-  --mute:#656d78;
-  --border:#d6d9df;
-  --border-strong:#141619;
-  --accent:#1b365d;
-  --accent-hover:#112440;
-  --ok:#145a38;
-  --ok-bg:#eef6f1;
-  --ok-border:#9ccab2;
-  --err:#a61d1d;
-  --err-bg:#fdf2f2;
-  --err-border:#e5a5a5;
-  --warn:#8a5200;
-  --warn-bg:#fef8ec;
-  --warn-border:#e2c386;
+  --surface-2:#f4f4f5;
+  --surface-3:#ececef;
+  --ink:#09090b;
+  --ink-2:#3f3f46;
+  --mute:#71717a;
+  --line:#e4e4e7;
+  --line-2:#d4d4d8;
+  --btn-bg:#18181b;
+  --btn-ink:#ffffff;
+  --btn-hover:#27272a;
+  --accent:#2563eb;
+  --ok:#059669;
+  --ok-bg:#ecfdf5;
+  --ok-line:#a7f3d0;
+  --warn:#b45309;
+  --warn-bg:#fffbeb;
+  --warn-line:#fde68a;
+  --err:#dc2626;
+  --err-bg:#fef2f2;
+  --err-line:#fecaca;
+  --shadow-xs:0 1px 2px rgba(9,9,11,.04);
+  --shadow-md:0 8px 24px rgba(9,9,11,.08),0 1px 3px rgba(9,9,11,.05);
+  --sidebar-w:248px;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
-  --bg:#111316;
-  --surface:#171a1f;
-  --surface-2:#1e2229;
-  --ink:#eceef1;
-  --ink-2:#bcc3cd;
-  --mute:#848d99;
-  --border:#2b313b;
-  --border-strong:#6e7785;
-  --accent:#35629e;
-  --accent-hover:#4375b8;
-  --ok:#52c788;
-  --ok-bg:#12241b;
-  --ok-border:#23543a;
-  --err:#f07171;
-  --err-bg:#291516;
-  --err-border:#662828;
-  --warn:#e6b450;
-  --warn-bg:#261f11;
-  --warn-border:#5e491c;
+  --bg:#09090b;
+  --surface:#111113;
+  --surface-2:#18181b;
+  --surface-3:#222226;
+  --ink:#fafafa;
+  --ink-2:#d4d4d8;
+  --mute:#8e8e98;
+  --line:#242429;
+  --line-2:#34343c;
+  --btn-bg:#fafafa;
+  --btn-ink:#09090b;
+  --btn-hover:#e4e4e7;
+  --accent:#60a5fa;
+  --ok:#34d399;
+  --ok-bg:rgba(16,185,129,.1);
+  --ok-line:rgba(16,185,129,.28);
+  --warn:#fbbf24;
+  --warn-bg:rgba(245,158,11,.1);
+  --warn-line:rgba(245,158,11,.28);
+  --err:#f87171;
+  --err-bg:rgba(239,68,68,.1);
+  --err-line:rgba(239,68,68,.28);
+  --shadow-xs:0 1px 2px rgba(0,0,0,.35);
+  --shadow-md:0 12px 32px rgba(0,0,0,.55);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -54,320 +68,457 @@ html,body{margin:0;padding:0;min-height:100%}
 body{
   background:var(--bg);
   color:var(--ink);
-  font:14.5px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font:14px/1.5 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   -webkit-font-smoothing:antialiased;
 }
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
+a{color:inherit;text-decoration:none}
 code,.mono{
-  font-family:ui-monospace,"Cascadia Code",Consolas,"SFMono-Regular",Menlo,monospace;
+  font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-variant-numeric:tabular-nums;
 }
-.mono{font-size:.78rem;color:var(--mute);word-break:break-all}
+.mono{font-size:12px;color:var(--mute);word-break:break-all}
 .num{font-variant-numeric:tabular-nums}
 
-/* Top Masthead */
-.masthead{
-  background:var(--surface);
-  border-top:3px solid var(--accent);
-  border-bottom:1px solid var(--border);
+/* App Shell */
+.shell{display:flex;min-height:100vh}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  position:fixed;top:0;bottom:0;left:0;z-index:40;
+  background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  transition:transform .2s ease;
 }
-.masthead-inner{
-  max-width:1040px;margin:0 auto;padding:0 20px;
-  display:flex;align-items:stretch;justify-content:space-between;gap:20px;flex-wrap:wrap;
+.sb-head{
+  height:56px;padding:0 16px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;
 }
-.site-id{
-  padding:14px 0;display:flex;align-items:baseline;gap:10px;color:var(--ink);
+.sb-logo{
+  width:28px;height:28px;border-radius:6px;background:var(--ink);color:var(--bg);
+  display:grid;place-items:center;flex-shrink:0;
 }
-.site-id:hover{text-decoration:none}
-.site-name{
-  font:700 1.2rem/1.1 Georgia,"Times New Roman",serif;
-  letter-spacing:-.01em;
-}
-.site-dept{
-  font-size:.78rem;color:var(--mute);padding-left:10px;border-left:1px solid var(--border);
-}
-.nav-wrap{display:flex;align-items:stretch;gap:22px}
-.nav{display:flex;align-items:stretch;gap:2px}
-.nav a{
-  display:flex;align-items:center;padding:15px 12px 13px;
-  font-size:.88rem;font-weight:600;color:var(--ink-2);
-  border-bottom:2px solid transparent;margin-bottom:-1px;
-}
-.nav a:hover{color:var(--ink);text-decoration:none;border-bottom-color:var(--border-strong)}
-.nav a.on{color:var(--ink);border-bottom-color:var(--accent)}
-.theme-toggle{
-  align-self:center;background:transparent;color:var(--mute);
-  border:1px solid var(--border);border-radius:3px;
-  padding:5px 10px;font-size:.78rem;font-weight:600;cursor:pointer;
-}
-.theme-toggle:hover{color:var(--ink);border-color:var(--border-strong);background:var(--surface-2)}
+.sb-brand{font-weight:700;font-size:14px;letter-spacing:-.02em;line-height:1.1}
+.sb-ver{font-size:11px;color:var(--mute);display:block;font-family:"JetBrains Mono",monospace}
 
-/* Layout */
-main{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
+.sb-nav{flex:1;overflow-y:auto;padding:14px 10px}
+.sb-group{margin-bottom:18px}
+.sb-label{
+  padding:0 10px 6px;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--mute);
+}
+.sb-link{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;
+  font-size:13.5px;font-weight:500;color:var(--ink-2);margin-bottom:2px;
+  transition:background .12s ease,color .12s ease;
+}
+.sb-link svg{width:16px;height:16px;color:var(--mute);flex-shrink:0}
+.sb-link:hover{background:var(--surface-2);color:var(--ink)}
+.sb-link.on{background:var(--surface-2);color:var(--ink);font-weight:600}
+.sb-link.on svg{color:var(--ink)}
+.sb-pill{
+  margin-left:auto;font:600 11px/1 "JetBrains Mono",monospace;
+  padding:2px 6px;border-radius:99px;background:var(--surface-3);color:var(--ink-2);
+}
+
+.sb-foot{
+  padding:12px 14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:10px;background:var(--surface);
+}
+.node-status{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.dot.err{background:var(--err)}
+.sb-foot-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* Mobile Header */
+.mob-bar{
+  display:none;position:sticky;top:0;z-index:35;height:52px;padding:0 14px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  align-items:center;justify-content:space-between;gap:10px;
+}
+.backdrop{
+  display:none;position:fixed;inset:0;z-index:38;background:rgba(0,0,0,.45);
+}
+.backdrop.open{display:block}
+
+/* Main Workspace */
+.workspace{
+  flex:1;margin-left:var(--sidebar-w);min-width:0;display:flex;flex-direction:column;
+}
+.topbar{
+  height:56px;padding:0 28px;border-bottom:1px solid var(--line);
+  background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:16px;
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
+.crumb b{color:var(--ink);font-weight:600}
+.content{max-width:1160px;width:100%;margin:0 auto;padding:28px 28px 64px}
+
+/* Typography & Headers */
 .page-head{
-  padding-bottom:16px;margin-bottom:22px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  margin-bottom:22px;
 }
-.page-head h1{
-  margin:0 0 4px;font:700 1.65rem/1.2 Georgia,"Times New Roman",serif;letter-spacing:-.015em;
-}
-.page-head p{margin:0;color:var(--mute);font-size:.9rem;max-width:68ch}
+.page-head h1{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.025em;line-height:1.2}
+.page-head p{margin:0;font-size:13.5px;color:var(--mute);max-width:66ch}
 
-.section{
-  background:var(--surface);border:1px solid var(--border);border-radius:3px;
-  padding:20px;margin-bottom:20px;
+/* Surfaces & Grids */
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  box-shadow:var(--shadow-xs);margin-bottom:18px;overflow:hidden;
 }
-.sec-head{
-  display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
-  margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);
+.panel-head{
+  padding:14px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
 }
-.sec-head h2{margin:0;font-size:1rem;font-weight:700;letter-spacing:-.01em}
-.sec-note{font-size:.82rem;color:var(--mute);margin:0 0 12px}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-.split .section{margin-bottom:0}
+.panel-title{margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.panel-sub{font-size:12.5px;color:var(--mute);margin-top:2px}
+.panel-body{padding:18px}
+.panel-body.tight{padding:0}
 
-/* Forms & Controls */
-label.field{
-  display:flex;flex-direction:column;gap:5px;
-  font-size:.78rem;font-weight:600;color:var(--ink-2);flex:1;min-width:140px;
+.verify-grid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+/* Metric Strip (Hairline Divided) */
+.stat-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  box-shadow:var(--shadow-xs);margin-bottom:18px;overflow:hidden;
 }
-input,textarea,button{font:inherit}
-input,textarea{
-  padding:8px 10px;border:1px solid var(--border);border-radius:2px;
-  background:var(--surface);color:var(--ink);width:100%;
+.stat-cell{padding:14px 18px;border-right:1px solid var(--line)}
+.stat-cell:last-child{border-right:none}
+.stat-k{font-size:11.5px;font-weight:500;color:var(--mute);margin-bottom:4px}
+.stat-v{font-size:20px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat-s{font-size:11.5px;color:var(--mute);margin-top:2px}
+
+/* Controls */
+label.field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500;color:var(--ink-2);flex:1;min-width:140px}
+input,textarea,select,button{font:inherit}
+input,textarea,select{
+  height:36px;padding:0 11px;border:1px solid var(--line-2);border-radius:6px;
+  background:var(--surface);color:var(--ink);width:100%;font-size:13.5px;
+  transition:border-color .12s ease,box-shadow .12s ease;
 }
-input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
-textarea{
-  min-height:118px;font-family:ui-monospace,Consolas,Menlo,monospace;
-  font-size:.82rem;line-height:1.5;resize:vertical;
+textarea{height:auto;min-height:132px;padding:10px 12px;font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.55;resize:vertical}
+input:focus,textarea:focus,select:focus{
+  outline:none;border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--ink) 10%,transparent);
 }
 button{
-  padding:8px 14px;border-radius:2px;border:1px solid var(--accent);
-  background:var(--accent);color:#ffffff;font-size:.86rem;font-weight:600;
-  cursor:pointer;white-space:nowrap;
+  height:36px;padding:0 14px;border-radius:6px;border:1px solid var(--btn-bg);
+  background:var(--btn-bg);color:var(--btn-ink);font-size:13px;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  white-space:nowrap;transition:background .12s ease,border-color .12s ease;
 }
-button:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
-button.secondary{
-  background:var(--surface);color:var(--ink);border-color:var(--border);
-}
-button.secondary:hover{background:var(--surface-2);border-color:var(--border-strong)}
-button.link-btn{
-  background:none;border:none;color:var(--accent);padding:2px 4px;font-size:.82rem;font-weight:600;
-}
-button.link-btn:hover{background:none;text-decoration:underline}
-button.sm{padding:5px 10px;font-size:.78rem}
+button:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
+button.ghost:hover{background:var(--surface-2);border-color:var(--ink-2)}
+button.subtle{background:var(--surface-2);color:var(--ink-2);border-color:transparent}
+button.subtle:hover{background:var(--surface-3);color:var(--ink)}
+button.sm{height:30px;padding:0 10px;font-size:12px;border-radius:5px}
+button.xs{height:24px;padding:0 8px;font-size:11.5px;border-radius:4px}
+button.icon-btn{width:32px;height:32px;padding:0}
 
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row-end{align-items:flex-end}
 .between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 
-/* Status Tags & Verdicts */
-.tag{
-  display:inline-block;padding:2px 6px;border-radius:2px;
-  font:700 .7rem/1.35 ui-monospace,Consolas,monospace;
-  letter-spacing:.03em;text-transform:uppercase;border:1px solid transparent;
+/* Segmented Tabs inside Views */
+.tabs{
+  display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;
 }
-.tag.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-border)}
-.tag.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-border)}
-.tag.err{background:var(--err-bg);color:var(--err);border-color:var(--err-border)}
-.tag.neutral{background:var(--surface-2);color:var(--ink-2);border-color:var(--border)}
+.tab{
+  height:auto;padding:9px 14px;border:none;border-bottom:2px solid transparent;border-radius:0;
+  background:transparent;color:var(--mute);font-size:13.5px;font-weight:500;margin-bottom:-1px;
+}
+.tab:hover{background:transparent;color:var(--ink);border-color:transparent}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
 
-.verdict{
-  display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;
-  padding:14px 16px;margin-bottom:16px;border:1px solid var(--border);border-left-width:4px;border-radius:2px;
+/* Badges & Status Banners */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;
+  font-size:11.5px;font-weight:600;border:1px solid transparent;white-space:nowrap;
 }
-.verdict.ok{background:var(--ok-bg);border-color:var(--ok-border);border-left-color:var(--ok)}
-.verdict.warn{background:var(--warn-bg);border-color:var(--warn-border);border-left-color:var(--warn)}
-.verdict.err{background:var(--err-bg);border-color:var(--err-border);border-left-color:var(--err)}
-.verdict-title{font-weight:700;font-size:1rem;letter-spacing:-.01em}
-.verdict.ok .verdict-title{color:var(--ok)}
-.verdict.warn .verdict-title{color:var(--warn)}
-.verdict.err .verdict-title{color:var(--err)}
-.verdict-sub{font-size:.84rem;color:var(--ink-2);margin-top:2px}
+.badge.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-line)}
+.badge.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-line)}
+.badge.err{background:var(--err-bg);color:var(--err);border-color:var(--err-line)}
+.badge.neutral{background:var(--surface-2);color:var(--ink-2);border-color:var(--line)}
 
-/* Summary Metadata Grid */
-.spec-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  border:1px solid var(--border);border-radius:2px;margin-bottom:16px;background:var(--surface);
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:14px 18px;border-radius:8px;border:1px solid var(--line);margin-bottom:18px;
 }
-.spec-cell{padding:11px 14px;border-right:1px solid var(--border)}
-.spec-cell:last-child{border-right:none}
-.spec-k{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);font-weight:600}
-.spec-v{font-size:1.05rem;font-weight:700;margin-top:3px}
-.spec-sub{font-size:.76rem;color:var(--mute);margin-top:2px}
+.status-bar.ok{background:var(--ok-bg);border-color:var(--ok-line)}
+.status-bar.warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.status-bar.err{background:var(--err-bg);border-color:var(--err-line)}
+.status-lead{display:flex;align-items:flex-start;gap:11px}
+.status-ico{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  flex-shrink:0;margin-top:1px;font-size:12px;font-weight:700;
+}
+.status-bar.ok .status-ico{background:var(--ok);color:#fff}
+.status-bar.warn .status-ico{background:var(--warn);color:#fff}
+.status-bar.err .status-ico{background:var(--err);color:#fff}
+.status-title{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
+.status-bar.ok .status-title{color:var(--ok)}
+.status-bar.warn .status-title{color:var(--warn)}
+.status-bar.err .status-title{color:var(--err)}
+.status-desc{font-size:12.5px;color:var(--ink-2);margin-top:2px}
 
-.note-box{
-  padding:10px 14px;border:1px solid var(--border);border-left:3px solid var(--accent);
-  background:var(--surface-2);font-size:.85rem;margin-bottom:16px;border-radius:2px;
+/* Verification Matrix & Interactive Merkle Tree */
+.check-list{display:flex;flex-direction:column}
+.check-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 18px;border-bottom:1px solid var(--line);font-size:13px;
 }
+.check-item:last-child{border-bottom:none}
+.check-left{display:flex;align-items:center;gap:10px}
+.check-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.check-dot.ok{background:var(--ok)}
+.check-dot.err{background:var(--err)}
+.check-dot.na{background:var(--warn)}
 
-/* Verification Log List */
-.check-log{border:1px solid var(--border);border-radius:2px;margin-bottom:14px;overflow:hidden}
-.check-row{
-  display:flex;align-items:baseline;gap:12px;padding:8px 12px;
-  border-bottom:1px solid var(--border);font-size:.84rem;
+.merkle-flow{display:flex;flex-direction:column;gap:8px}
+.m-node{
+  padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);
+  display:flex;flex-direction:column;gap:4px;
 }
-.check-row:last-child{border-bottom:none}
-.check-code{
-  font:700 .72rem/1 ui-monospace,Consolas,monospace;min-width:50px;flex-shrink:0;
-}
-.check-code.ok{color:var(--ok)}
-.check-code.err{color:var(--err)}
-.check-code.na{color:var(--warn)}
+.m-node.root{border-color:var(--ok-line);background:var(--ok-bg)}
+.m-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.m-arrow{padding-left:14px;font:500 11px/1 "JetBrains Mono",monospace;color:var(--mute)}
 
-/* Technical Proof Drawer */
-details.proof{border:1px solid var(--border);border-radius:2px;background:var(--surface-2)}
-details.proof summary{
-  padding:9px 12px;cursor:pointer;font-size:.83rem;font-weight:600;color:var(--ink-2);
-  display:flex;justify-content:space-between;align-items:center;
-}
-details.proof[open] summary{border-bottom:1px solid var(--border)}
-.proof-body{padding:12px;background:var(--surface)}
-.kv-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.kv-table th{
-  text-align:left;width:130px;padding:6px 8px;color:var(--mute);font-weight:600;
-  border-bottom:1px solid var(--border);background:transparent;text-transform:none;letter-spacing:0;
-}
-.kv-table td{padding:6px 8px;border-bottom:1px solid var(--border);word-break:break-all}
-.kv-table tr:last-child th,.kv-table tr:last-child td{border-bottom:none}
-.merkle-list{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.merkle-item{
-  display:flex;gap:10px;align-items:baseline;padding:3px 0;
-  font:400 .77rem/1.45 ui-monospace,Consolas,monospace;color:var(--ink-2);
-}
-
-/* Data Tables */
-.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:2px}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
+/* Tables */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
 th{
-  text-align:left;padding:9px 11px;font-size:.73rem;text-transform:uppercase;
-  letter-spacing:.04em;color:var(--mute);background:var(--surface-2);
-  border-bottom:1px solid var(--border);white-space:nowrap;
+  text-align:left;padding:10px 16px;font-size:11.5px;font-weight:600;
+  color:var(--mute);background:var(--surface-2);border-bottom:1px solid var(--line);
+  white-space:nowrap;
 }
-td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tbody tr:hover{background:var(--surface-2)}
-img.qr-sm{width:52px;height:52px;background:#fff;border:1px solid var(--border);padding:3px;display:block}
-img.qr-lg{width:152px;height:152px;background:#fff;border:1px solid #999;padding:6px;display:block}
+tbody tr:hover{background:color-mix(in srgb,var(--surface-2) 65%,transparent)}
+img.qr-sm{width:44px;height:44px;background:#fff;border:1px solid var(--line);padding:3px;border-radius:4px;display:block}
+img.qr-card{width:168px;height:168px;background:#fff;border:1px solid var(--line);padding:8px;border-radius:6px;display:block;margin:0 auto}
 
-/* Summary Strip (Registrar & Audit) */
-.meta-strip{
-  display:flex;gap:18px;flex-wrap:wrap;padding:10px 14px;margin-bottom:20px;
-  background:var(--surface);border:1px solid var(--border);border-radius:2px;font-size:.84rem;
+/* Dropzone & Multi-Sig Slots */
+.dropzone{
+  border:1.5px dashed var(--line-2);border-radius:8px;padding:18px;text-align:center;
+  background:var(--surface-2);cursor:pointer;margin-bottom:12px;transition:border-color .15s ease;
 }
-.meta-strip span{color:var(--mute)}
-.meta-strip b{color:var(--ink);font-variant-numeric:tabular-nums}
-
-/* Inline Feedback & File Trigger */
-.inline-msg{font-size:.82rem;min-height:1.2em;margin-top:8px}
-.inline-msg.ok{color:var(--ok);font-weight:600}
-.inline-msg.err{color:var(--err);font-weight:600}
-.file-btn{
-  display:inline-block;padding:5px 10px;border:1px solid var(--border);border-radius:2px;
-  background:var(--surface);color:var(--ink-2);font-size:.78rem;font-weight:600;cursor:pointer;
+.dropzone:hover,.dropzone.drag{border-color:var(--ink)}
+.sig-slots{display:flex;gap:6px;align-items:center}
+.sig-slot{
+  padding:3px 8px;border-radius:4px;font:600 11px/1.3 "JetBrains Mono",monospace;
+  border:1px dashed var(--line-2);color:var(--mute);
 }
-.file-btn:hover{border-color:var(--border-strong);color:var(--ink);background:var(--surface-2)}
+.sig-slot.filled{border-style:solid;border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok)}
 
-/* Auth Box */
-.auth-panel{max-width:440px;margin:24px auto}
-.empty{padding:22px 14px;color:var(--mute);font-size:.88rem;text-align:center}
+/* Version Chain Timeline */
+.ver-list{display:flex;flex-direction:column;gap:14px}
+.ver-rail{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute);margin-bottom:12px;
+}
 
-/* Official Printable Statement of Marks */
+/* Key Block */
+.pem-box{
+  margin:0;padding:12px 14px;border-radius:6px;background:var(--surface-2);
+  border:1px solid var(--line);font:400 11.5px/1.55 "JetBrains Mono",monospace;
+  color:var(--ink-2);overflow-x:auto;white-space:pre;
+}
+
+/* Modal */
+.modal-bg{
+  position:fixed;inset:0;z-index:60;background:rgba(9,9,11,.55);
+  display:grid;place-items:center;padding:16px;
+}
+.modal{
+  width:100%;max-width:480px;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;box-shadow:var(--shadow-md);overflow:hidden;
+}
+
+/* Printable Official Certificate */
+.sheet-wrap{max-width:820px;margin:0 auto}
 .sheet{
-  background:#ffffff;color:#111111;border:1px solid #9aa0a6;padding:26px;
+  background:#ffffff;color:#09090b;border:1px solid #d4d4d8;border-radius:6px;
+  padding:30px;box-shadow:var(--shadow-md);
 }
-.sheet-inner{border:2px solid #111111;padding:24px}
-.sheet-top{
+.sheet-border{border:1.5px solid #09090b;padding:26px}
+.sheet-head{
   display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;
-  padding-bottom:14px;margin-bottom:18px;border-bottom:2px solid #111111;
+  padding-bottom:16px;margin-bottom:20px;border-bottom:1.5px solid #09090b;
 }
-.sheet-top h2{margin:0;font:700 1.45rem/1.2 Georgia,"Times New Roman",serif;color:#111111}
-.sheet-top p{margin:4px 0 0;font-size:.82rem;color:#444444}
-.sheet-body{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start}
-.sheet table{border:1px solid #cfd4da}
-.sheet th{background:#f5f6f8;color:#333333;width:38%;border-bottom:1px solid #cfd4da}
-.sheet td{background:#ffffff;color:#111111;border-bottom:1px solid #cfd4da}
-.sheet-qr{text-align:center;border:1px solid #cfd4da;padding:12px;background:#fafafa}
-.sheet-foot{
-  margin-top:18px;padding-top:12px;border-top:1px solid #111111;
-  font:400 .74rem/1.65 ui-monospace,Consolas,monospace;color:#333333;word-break:break-all;
+.sheet-h1{margin:0;font:700 22px/1.2 Georgia,"Times New Roman",serif;color:#09090b}
+.sheet-sub{font-size:12.5px;color:#52525b;margin-top:3px}
+.sheet-grid{display:grid;grid-template-columns:1fr 190px;gap:24px;align-items:start}
+.sheet table{border:1px solid #e4e4e7}
+.sheet th{background:#f4f4f5;color:#52525b;width:38%;padding:9px 12px;border-bottom:1px solid #e4e4e7}
+.sheet td{background:#fff;color:#09090b;padding:9px 12px;border-bottom:1px solid #e4e4e7}
+.sheet-qr-box{text-align:center;border:1px solid #e4e4e7;padding:12px;border-radius:4px;background:#fafafa}
+.sheet-seal{
+  margin-top:20px;padding-top:14px;border-top:1px dashed #a1a1aa;
+  font:400 11px/1.65 "JetBrains Mono",monospace;color:#3f3f46;word-break:break-all;
 }
 
-/* Subtle Copy Notice */
-#notice{
-  position:fixed;right:18px;bottom:18px;z-index:50;
-  padding:8px 13px;background:var(--ink);color:var(--bg);
-  border-radius:2px;font-size:.8rem;font-weight:600;
-  opacity:0;pointer-events:none;transition:opacity .18s ease;
+/* Toast */
+#toast{
+  position:fixed;right:20px;bottom:20px;z-index:80;max-width:360px;
+  padding:10px 14px;border-radius:7px;font-size:13px;font-weight:500;
+  background:var(--ink);color:var(--bg);box-shadow:var(--shadow-md);
+  transform:translateY(120%);opacity:0;transition:all .18s ease;pointer-events:none;
 }
-#notice.show{opacity:1}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.err{background:var(--err);color:#fff}
 
-@media (max-width:780px){
-  .split{grid-template-columns:1fr}
-  .spec-grid{grid-template-columns:1fr 1fr}
-  .spec-cell{border-bottom:1px solid var(--border)}
-  .sheet-body{grid-template-columns:1fr}
-  .sheet-qr{display:flex;flex-direction:column;align-items:center}
-  .site-dept{display:none}
+.empty{padding:36px 20px;text-align:center;color:var(--mute);font-size:13.5px}
+
+@media (max-width:940px){
+  .verify-grid,.grid-2{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .stat-cell{border-bottom:1px solid var(--line)}
+}
+@media (max-width:820px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .workspace{margin-left:0}
+  .mob-bar{display:flex}
+  .topbar{display:none}
+  .content{padding:18px 14px 48px}
+  .sheet-grid{grid-template-columns:1fr}
 }
 @media print{
   body{background:#fff!important;color:#000!important}
-  .masthead,.noprint,#notice{display:none!important}
-  main{max-width:none;padding:0;margin:0}
-  .sheet{border:none;padding:0}
+  .sidebar,.mob-bar,.topbar,.noprint,#toast,#modalHost{display:none!important}
+  .workspace{margin-left:0!important}
+  .content{max-width:none;padding:0;margin:0}
+  .sheet{box-shadow:none;border:none;padding:0}
 }
 </style>
 </head>
 <body>
-<header class="masthead noprint">
-  <div class="masthead-inner">
-    <a href="#verify" class="site-id">
-      <span class="site-name">Result Ledger</span>
-      <span class="site-dept">Examination Office · Verification Registry</span>
-    </a>
-    <div class="nav-wrap">
-      <nav class="nav" aria-label="Main navigation">
-        <a href="#verify" id="t-verify">Verify</a>
-        <a href="#admin" id="t-admin">Registrar</a>
-        <a href="#audit" id="t-audit">Audit Log</a>
-      </nav>
-      <button type="button" class="theme-toggle" id="themeBtn" aria-label="Toggle color theme">Dark</button>
+<div class="shell">
+  <aside class="sidebar noprint" id="sidebar" aria-label="Primary Navigation">
+    <div class="sb-head">
+      <div class="sb-logo" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand">ResultLedger</div>
+        <span class="sb-ver">Ed25519 · Merkle v1</span>
+      </div>
     </div>
-  </div>
-</header>
 
-<main id="app"></main>
-<div id="notice" role="status" aria-live="polite"></div>
+    <nav class="sb-nav">
+      <div class="sb-group">
+        <div class="sb-label">Verification</div>
+        <a href="#verify" class="sb-link" data-nav="verify">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Verify Credential
+        </a>
+        <a href="#explorer" class="sb-link" data-nav="explorer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Ledger Explorer
+          <span class="sb-pill" id="sbBatches">0</span>
+        </a>
+        <a href="#keys" class="sb-link" data-nav="keys">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          Trust Anchors
+        </a>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">Operations</div>
+        <a href="#admin" class="sb-link" data-nav="admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Registrar Console
+        </a>
+        <a href="#audit" class="sb-link" data-nav="audit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Integrity Audit
+        </a>
+      </div>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="node-status">
+        <span class="dot" id="nodeDot"></span>
+        <span id="nodeText">Connecting to ledger…</span>
+      </div>
+      <div class="sb-foot-row">
+        <span class="mono" style="font-size:11px" id="cryptoMode">WebCrypto</span>
+        <button type="button" class="ghost xs" id="themeBtn">Dark Mode</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <div class="workspace">
+    <div class="mob-bar noprint">
+      <button type="button" class="ghost icon-btn" id="menuBtn" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="sb-brand">ResultLedger</span>
+      <button type="button" class="ghost xs" id="mobThemeBtn">Dark</button>
+    </div>
+
+    <div class="topbar noprint">
+      <div class="crumb"><span>ResultLedger</span><span>/</span><b id="crumbTitle">Verify Credential</b></div>
+      <div class="row" id="topActions"></div>
+    </div>
+
+    <main class="content" id="app"></main>
+  </div>
+</div>
+
+<div id="modalHost"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const $=s=>document.querySelector(s), app=$('#app'), enc=encodeURIComponent;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const GENESIS='0'.repeat(64);
 const hasSubtle=!!(globalThis.crypto&&crypto.subtle);
+let adminTab='records';
 
-/* Theme */
+/* Theme & Drawer */
 function setTheme(t){
   document.documentElement.dataset.theme=t;
   localStorage.setItem('rl_theme',t);
-  $('#themeBtn').textContent=t==='dark'?'Light':'Dark';
+  $('#themeBtn').textContent=t==='dark'?'Light Mode':'Dark Mode';
+  $('#mobThemeBtn').textContent=t==='dark'?'Light':'Dark';
 }
 setTheme(localStorage.getItem('rl_theme')||'light');
-$('#themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+const toggleTheme=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+$('#themeBtn').onclick=toggleTheme;
+$('#mobThemeBtn').onclick=toggleTheme;
 
-let noticeTimer;
-function notify(msg){
-  const el=$('#notice');
-  el.textContent=msg;el.className='show';
-  clearTimeout(noticeTimer);
-  noticeTimer=setTimeout(()=>{el.className='';},2400);
+function closeDrawer(){$('#sidebar').classList.remove('open');$('#backdrop').classList.remove('open');}
+$('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#backdrop').classList.toggle('open');};
+$('#backdrop').onclick=closeDrawer;
+
+$('#cryptoMode').textContent=hasSubtle?'WebCrypto OK':'HTTP Mode';
+
+/* Toast, Copy & Download */
+let toastT;
+function toast(msg,isErr=false){
+  const el=$('#toast');
+  el.textContent=msg;el.className=`show${isErr?' err':''}`;
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{el.className='';},3000);
 }
-async function copyVal(v,label){
-  try{await navigator.clipboard.writeText(v);notify(`${label} copied`);}
-  catch{notify('Copy failed');}
+async function copyVal(val,label='Value'){
+  try{await navigator.clipboard.writeText(val);toast(`${label} copied`);}
+  catch{toast('Clipboard unavailable',true);}
+}
+function downloadJson(filename,obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=u;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
 
-/* Client-side crypto (matches lib/ledger.js) */
+/* Client-Side Cryptographic Engine (Exact parity with lib/ledger.js) */
 const sha=async b=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('');
 const shaStr=s=>sha(new TextEncoder().encode(s));
 const hexB=h=>Uint8Array.from(h.match(/../g)||[],x=>parseInt(x,16));
@@ -376,13 +527,18 @@ const canon=r=>JSON.stringify(['v1',r.batch,r.student_id,r.course,Number(r.marks
 const leafOf=r=>sha(cat(Uint8Array.of(0),new TextEncoder().encode(canon(r))));
 const headOf=c=>shaStr(JSON.stringify(['hdr',c.n,c.root,c.prev,c.count,c.ts]));
 const corrDigestOf=r=>shaStr(JSON.stringify(['corr',r.student_id,r.course,Number(r.marks),r.reason,r.supersedes]));
-async function rootOf(leaf,proof){
-  let h=leaf;
-  for(const s of proof){
-    const a=hexB(s.hash),b=hexB(h);
-    h=await sha(cat(Uint8Array.of(1),...(s.side==='L'?[a,b]:[b,a])));
+
+async function traceMerkle(leaf,proof){
+  const steps=[];
+  let cur=leaf;
+  for(let i=0;i<proof.length;i++){
+    const s=proof[i];
+    const a=hexB(s.hash),b=hexB(cur);
+    const next=await sha(cat(Uint8Array.of(1),...(s.side==='L'?[a,b]:[b,a])));
+    steps.push({level:i+1,side:s.side,sibling:s.hash,result:next});
+    cur=next;
   }
-  return h;
+  return {root:cur,steps};
 }
 
 const keyCache=new Map();
@@ -402,6 +558,7 @@ async function verifyEd25519(pubPem,msgHex,sigHex){
   }catch{return null;}
 }
 
+/* API & Helpers */
 const api=async(p,body,tok)=>{
   const r=await fetch(p,{method:body?'POST':'GET',headers:{'content-type':'application/json','x-token':tok||''},body:body&&JSON.stringify(body)});
   return{ok:r.ok,status:r.status,j:await r.json()};
@@ -410,58 +567,91 @@ const qrLink=r=>`${location.origin}/#verify?s=${enc(r.student_id)}&c=${enc(r.cou
 const sheetLink=r=>`#marksheet?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}`;
 const hashArgs=()=>new URLSearchParams(location.hash.split('?')[1]||'');
 
-function route(){
-  const v=(location.hash.slice(1).split('?')[0])||'verify';
-  ['verify','admin','audit'].forEach(t=>$('#t-'+t).classList.toggle('on',t===v));
-  ({verify,admin,audit,marksheet})[v]?.();
+async function refreshNodeStatus(){
+  try{
+    const {ok,j}=await api('/api/checkpoints');
+    if(!ok)throw new Error();
+    const n=j.checkpoints?.length||0;
+    $('#sbBatches').textContent=n;
+    $('#nodeDot').className='dot';
+    $('#nodeText').textContent=n?`${n} signed batch${n===1?'':'es'} live`:'Ledger ready (genesis)';
+  }catch{
+    $('#nodeDot').className='dot err';
+    $('#nodeText').textContent='Ledger offline';
+  }
 }
-addEventListener('hashchange',route);addEventListener('load',route);
 
-/* ---------------- VERIFY ---------------- */
+/* Router */
+const TITLES={
+  verify:'Verify Credential',
+  explorer:'Ledger Explorer',
+  keys:'Trust Anchors & Public Keys',
+  admin:'Registrar Console',
+  audit:'Integrity Audit',
+  marksheet:'Official Statement of Marks'
+};
+function route(){
+  closeDrawer();
+  const v=(location.hash.slice(1).split('?')[0])||'verify';
+  document.querySelectorAll('.sb-link').forEach(a=>a.classList.toggle('on',a.dataset.nav===v));
+  $('#crumbTitle').textContent=TITLES[v]||'ResultLedger';
+  $('#topActions').innerHTML='';
+  ({verify,explorer,keys,admin,audit,marksheet})[v]?.();
+}
+addEventListener('hashchange',route);
+addEventListener('load',()=>{refreshNodeStatus();route();});
+
+/* ==================== 1. VERIFY CREDENTIAL ==================== */
 function verify(){
   const q=hashArgs();
   app.innerHTML=`
     <div class="page-head">
       <div>
-        <h1>Verify Examination Result</h1>
-        <p>Checks the record's SHA-256 leaf digest, Merkle inclusion proof, batch hash chain, and Ed25519 signatures locally in your browser.</p>
+        <h1>Verify Examination Credential</h1>
+        <p>Zero-trust client verification. Recomputes SHA-256 leaf hashes, Merkle inclusion paths, hash-chain links, and Ed25519 signatures directly inside your browser.</p>
       </div>
     </div>
-    <div class="section noprint">
-      <form class="row row-end" id="f">
-        <label class="field">Student ID
-          <input id="s" placeholder="e.g. REG101" value="${esc(q.get('s')||'')}" required>
-        </label>
-        <label class="field">Course Code (optional)
-          <input id="c" placeholder="e.g. CSE101" value="${esc(q.get('c')||'')}">
-        </label>
-        <button type="submit">Verify</button>
-        ${q.get('s')?'<button type="button" class="secondary" id="clr">Clear</button>':''}
-      </form>
-      ${q.get('h')?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:.8rem"><span style="font-weight:600;color:var(--ink-2)">QR Digest:</span> <span class="mono">${esc(q.get('h'))}</span></div>`:''}
+    <div class="panel noprint">
+      <div class="panel-body">
+        <form class="row row-end" id="vf">
+          <label class="field">Student ID
+            <input id="vs" placeholder="e.g. REG101" value="${esc(q.get('s')||'')}" required>
+          </label>
+          <label class="field">Course Code (optional)
+            <input id="vc" placeholder="e.g. CSE101" value="${esc(q.get('c')||'')}">
+          </label>
+          <button type="submit">Verify Record</button>
+          ${q.get('s')?'<button type="button" class="ghost" id="vclr">Reset</button>':''}
+        </form>
+        ${q.get('h')?`<div class="row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+          <span class="badge neutral">QR Bound Digest</span>
+          <span class="mono">${esc(q.get('h'))}</span>
+        </div>`:''}
+      </div>
     </div>
-    <div id="out"></div>`;
-  $('#f').onsubmit=e=>{
+    <div id="vout"></div>`;
+  $('#vf').onsubmit=e=>{
     e.preventDefault();
-    const p=new URLSearchParams({s:$('#s').value.trim()});
-    if($('#c').value.trim())p.set('c',$('#c').value.trim());
+    const p=new URLSearchParams({s:$('#vs').value.trim()});
+    if($('#vc').value.trim())p.set('c',$('#vc').value.trim());
     location.hash='verify?'+p;
   };
-  if($('#clr'))$('#clr').onclick=()=>{location.hash='verify';};
+  if($('#vclr'))$('#vclr').onclick=()=>{location.hash='verify';};
   if(q.get('s'))runVerify(q.get('s'),q.get('c'),q.get('h'));
-  else $('#out').innerHTML=`<div class="section empty">Enter a Student ID above, or scan the QR code on an official marksheet to run verification.</div>`;
+  else $('#vout').innerHTML=`<div class="panel"><div class="empty">Enter a Student ID above or scan the QR code on an official marksheet to verify its cryptographic proof.</div></div>`;
 }
 
 async function runVerify(s,c,h){
-  const out=$('#out');
+  const out=$('#vout');
   if(!hasSubtle){
-    out.innerHTML=`<div class="section"><div class="verdict err" style="margin:0"><div><div class="verdict-title">WebCrypto Unavailable</div><div class="verdict-sub">In-browser verification requires HTTPS or localhost.</div></div></div></div>`;
+    out.innerHTML=`<div class="status-bar err"><div class="status-lead"><div class="status-ico">!</div><div><div class="status-title">Secure Context Required</div><div class="status-desc">Browser WebCrypto requires HTTPS or localhost to verify proofs independently.</div></div></div></div>`;
     return;
   }
-  out.innerHTML='<div class="section empty">Verifying hashes, Merkle proof, and Ed25519 signatures…</div>';
+  out.innerHTML='<div class="panel"><div class="empty">Running WebCrypto verification pipeline…</div></div>';
+  const t0=performance.now();
   const [{j:res},{j:cp}]=await Promise.all([api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`),api('/api/checkpoints')]);
   if(!res.results?.length){
-    out.innerHTML=`<div class="section"><div class="verdict err" style="margin:0"><div><div class="verdict-title">No Matching Record Found</div><div class="verdict-sub">No published result exists for student "${esc(s)}"${c?` in course "${esc(c)}"`:''}.</div></div></div></div>`;
+    out.innerHTML=`<div class="status-bar err"><div class="status-lead"><div class="status-ico">✕</div><div><div class="status-title">No Published Credential Found</div><div class="status-desc">No ledger record exists for student "${esc(s)}"${c?` in course "${esc(c)}"`:''}.</div></div></div></div>`;
     return;
   }
 
@@ -476,12 +666,12 @@ async function runVerify(s,c,h){
     prev=k.head;
   }
 
-  const blocks=[];
+  const verifiedItems=[];
   for(const x of res.results){
     const leaf=await leafOf(x.record);
     const meta=cpMap.get(x.record.batch);
     const cpb=meta?.cp;
-    const calcRoot=await rootOf(leaf,x.proof);
+    const {root:calcRoot,steps}=await traceMerkle(leaf,x.proof);
     const leafOk=leaf===x.leaf;
     const rootOk=!!cpb&&calcRoot===cpb.root;
     const chainOk=!!meta?.linkOk;
@@ -505,167 +695,400 @@ async function runVerify(s,c,h){
 
     const qrOk=h?h===leaf:null;
     const valid=leafOk&&rootOk&&chainOk&&sigOk!==false&&corrOk!==false&&qrOk!==false;
-    const state=!valid?['err','VERIFICATION FAILED — RECORD INVALID','One or more cryptographic checks failed against the signed external checkpoint.']
-      :x.superseded?['warn','AUTHENTIC HISTORICAL RECORD (SUPERSEDED)','Cryptographically valid, but replaced by a newer two-admin signed correction.']
-      :['ok','AUTHENTIC — CURRENT RECORD','All cryptographic checks passed locally against the signed checkpoint chain.'];
-
-    const line=(label,ok)=>{
-      const cls=ok===null?'na':ok?'ok':'err';
-      const code=ok===null?'[INFO]':ok?'[PASS]':'[FAIL]';
-      return `<div class="check-row"><span class="check-code ${cls}">${code}</span><span>${label}${ok===null?' (browser Ed25519 unsupported; verified server-side)':''}</span></div>`;
-    };
-
-    blocks.push(`<div class="section">
-      <div class="verdict ${state[0]}">
-        <div>
-          <div class="verdict-title">${state[1]}</div>
-          <div class="verdict-sub">${state[2]}</div>
-        </div>
-        <a href="${sheetLink({student_id:x.record.student_id,course:x.record.course,leaf:x.leaf})}" class="noprint"><button type="button" class="secondary sm">Open Marksheet</button></a>
-      </div>
-
-      <div class="spec-grid">
-        <div class="spec-cell"><div class="spec-k">Student ID</div><div class="spec-v num">${esc(x.record.student_id)}</div></div>
-        <div class="spec-cell"><div class="spec-k">Course</div><div class="spec-v">${esc(x.record.course)}</div></div>
-        <div class="spec-cell"><div class="spec-k">Marks</div><div class="spec-v num">${x.record.marks} / 100</div></div>
-        <div class="spec-cell">
-          <div class="spec-k">Version</div>
-          <div class="spec-v num">v${x.record.version} <span class="tag ${x.superseded?'warn':'ok'}" style="margin-left:4px">${x.superseded?'Superseded':'Current'}</span></div>
-          <div class="spec-sub">Batch #${x.batch.n} · ${new Date(x.batch.ts).toLocaleDateString()}</div>
-        </div>
-      </div>
-
-      ${x.record.reason?`<div class="note-box">
-        <b>Correction Record:</b> ${esc(x.record.reason)}<br>
-        <span style="color:var(--mute)">Signed by <b>${x.record.approvals.map(a=>esc(a[0])).join('</b> and <b>')}</b> (Ed25519) · Supersedes <code>${esc((x.record.supersedes||'').slice(0,16))}…</code></span>
-      </div>`:''}
-
-      <div class="check-log">
-        ${line('Canonical SHA-256 leaf digest matches stored record',leafOk)}
-        ${line('Merkle inclusion proof reconstructs signed checkpoint root',rootOk)}
-        ${line('Batch header and hash chain valid from genesis',chainOk)}
-        ${line('Ledger Ed25519 signature verified in browser',sigOk)}
-        ${corrChecked?line('Two distinct admin Ed25519 correction signatures verified',corrOk):''}
-        ${h?line('Scanned QR digest matches this exact record',qrOk):''}
-      </div>
-
-      <details class="proof">
-        <summary><span>Cryptographic Proof &amp; Merkle Path (${x.proof.length} step${x.proof.length===1?'':'s'})</span><span class="mono">SHA-256 / Ed25519</span></summary>
-        <div class="proof-body">
-          <table class="kv-table">
-            <tr><th>Leaf Digest</th><td class="mono">${leaf}</td><td style="width:60px"><button type="button" class="link-btn" data-copy="${leaf}" data-label="Leaf digest">Copy</button></td></tr>
-            <tr><th>Merkle Root</th><td class="mono">${calcRoot}</td><td><button type="button" class="link-btn" data-copy="${calcRoot}" data-label="Merkle root">Copy</button></td></tr>
-            <tr><th>Batch Head</th><td class="mono">${x.batch.head}</td><td><button type="button" class="link-btn" data-copy="${x.batch.head}" data-label="Batch head">Copy</button></td></tr>
-            <tr><th>Previous Head</th><td class="mono">${x.batch.prev}</td><td></td></tr>
-          </table>
-          ${x.proof.length?`<div class="merkle-list">
-            <div class="spec-k" style="margin-bottom:4px">Merkle Sibling Path (Leaf to Root)</div>
-            ${x.proof.map((st,i)=>`<div class="merkle-item"><span>${i+1}.</span><span class="tag neutral">${st.side==='L'?'L':'R'}</span><span>${st.hash}</span></div>`).join('')}
-          </div>`:'<div class="mono" style="margin-top:8px">Single-leaf batch (leaf hash equals Merkle root).</div>'}
-        </div>
-      </details>
-    </div>`);
+    verifiedItems.push({x,leaf,calcRoot,steps,leafOk,rootOk,chainOk,sigOk,corrOk,corrChecked,qrOk,valid});
   }
+  const elapsed=(performance.now()-t0).toFixed(1);
 
-  const anyQr=h&&res.results.some(x=>x.leaf===h);
-  out.innerHTML=(h&&!anyQr?`<div class="section"><div class="verdict err" style="margin:0"><div><div class="verdict-title">QR Digest Mismatch</div><div class="verdict-sub">The hash embedded in the QR code does not match any published record for this student.</div></div></div></div>`:'')+blocks.join('');
-  out.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyVal(b.dataset.copy,b.dataset.label));
-}
+  const anyQr=h&&verifiedItems.some(v=>v.leaf===h);
+  const qrWarn=h&&!anyQr?`<div class="status-bar err"><div class="status-lead"><div class="status-ico">✕</div><div><div class="status-title">Forged or Mismatched QR Code</div><div class="status-desc">The scanned QR digest does not match any published record for this student. Treat this document as tampered.</div></div></div></div>`:'';
 
-/* ---------------- PRINTABLE MARKSHEET ---------------- */
-async function marksheet(){
-  const q=hashArgs(), s=q.get('s')||'', c=q.get('c')||'', h=q.get('h')||'';
-  if(!s){app.innerHTML=`<div class="section empty">Missing parameters. <a href="#verify">Return to verification</a>.</div>`;return;}
-  app.innerHTML='<div class="section empty">Loading statement of marks…</div>';
-  const {j:res}=await api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`);
-  const match=(res.results||[]).find(x=>h?x.leaf===h:!x.superseded) || res.results?.[0];
-  if(!match){app.innerHTML=`<div class="section"><div class="verdict err" style="margin:0"><div><div class="verdict-title">Record Not Found</div></div></div></div>`;return;}
-  const r=match.record, link=qrLink({student_id:r.student_id,course:r.course,leaf:match.leaf});
-  app.innerHTML=`
-    <div class="between noprint" style="margin-bottom:16px">
-      <button type="button" class="secondary" onclick="history.back()">← Back</button>
-      <div class="row">
-        <button type="button" class="secondary" id="copyUrl">Copy Verify URL</button>
-        <a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${match.leaf}"><button type="button" class="secondary">Open Verifier</button></a>
-        <button type="button" onclick="window.print()">Print / Save PDF</button>
+  const html=verifiedItems.map((v,idx)=>{
+    const {x,leaf,calcRoot,steps,leafOk,rootOk,chainOk,sigOk,corrOk,corrChecked,qrOk,valid}=v;
+    const r=x.record;
+    const cls=!valid?'err':x.superseded?'warn':'ok';
+    const ico=!valid?'✕':x.superseded?'!':'✓';
+    const title=!valid?'Verification Failed — Tampering Detected':x.superseded?'Authentic Historical Record (Superseded)':'Cryptographically Verified · Current Record';
+    const desc=!valid?'One or more client-side cryptographic checks failed against the signed external checkpoint.'
+      :x.superseded?'This record is authentic but has been officially replaced by a newer two-admin signed correction.'
+      :`All proofs verified locally via WebCrypto in ${elapsed} ms against signed Checkpoint #${x.batch.n}.`;
+
+    const chkRow=(name,detail,ok)=>`<div class="check-item">
+      <div class="check-left">
+        <span class="check-dot ${ok===null?'na':ok?'ok':'err'}"></span>
+        <div>
+          <div style="font-weight:500">${name}</div>
+          <div style="font-size:11.5px;color:var(--mute)">${detail}</div>
+        </div>
       </div>
-    </div>
-    <div class="sheet">
-      <div class="sheet-inner">
-        <div class="sheet-top">
+      <span class="badge ${ok===null?'warn':ok?'ok':'err'}">${ok===null?'SERVER ONLY':ok?'PASS':'FAIL'}</span>
+    </div>`;
+
+    const link=qrLink({student_id:r.student_id,course:r.course,leaf:x.leaf});
+    return `<div style="margin-bottom:26px">
+      <div class="status-bar ${cls}">
+        <div class="status-lead">
+          <div class="status-ico">${ico}</div>
           <div>
-            <h2>Statement of Examination Marks</h2>
-            <p>Issued via Signed Append-Only Examination Ledger</p>
-          </div>
-          <span class="tag ${match.superseded?'warn':'ok'}">${match.superseded?'Superseded':'Current Record'}</span>
-        </div>
-        <div class="sheet-body">
-          <table>
-            <tr><th>Student ID</th><td class="num"><b>${esc(r.student_id)}</b></td></tr>
-            <tr><th>Course Code</th><td>${esc(r.course)}</td></tr>
-            <tr><th>Marks Awarded</th><td class="num"><b>${r.marks}</b> / 100</td></tr>
-            <tr><th>Ledger Version</th><td class="num">Version ${r.version} (Batch #${match.batch.n})</td></tr>
-            <tr><th>Published At</th><td class="num">${new Date(match.batch.ts).toLocaleString()}</td></tr>
-            ${r.reason?`<tr><th>Correction Reason</th><td>${esc(r.reason)}</td></tr>
-            <tr><th>Authorizing Signers</th><td>${r.approvals.map(a=>esc(a[0])).join(', ')} (Ed25519)</td></tr>`:''}
-          </table>
-          <div class="sheet-qr">
-            <img class="qr-lg" alt="Verification QR" src="/api/qr?text=${enc(link)}">
-            <div style="font-size:.78rem;font-weight:700;color:#111;margin-top:8px">Scan to Verify</div>
-            <div style="font-size:.7rem;color:#555">Independent browser check</div>
+            <div class="status-title">${title}</div>
+            <div class="status-desc">${desc}</div>
           </div>
         </div>
-        <div class="sheet-foot">
-          <b>Verify URL:</b> ${esc(link)}<br>
-          <b>Leaf Hash:</b> ${match.leaf}<br>
-          <b>Merkle Root:</b> ${match.batch.root}<br>
-          <b>Batch Head:</b> ${match.batch.head}
+        <div class="row noprint">
+          <button type="button" class="ghost sm" data-dlproof="${idx}">Export Proof JSON</button>
+          <a href="${sheetLink({student_id:r.student_id,course:r.course,leaf:x.leaf})}"><button type="button" class="sm">Official Marksheet</button></a>
+        </div>
+      </div>
+
+      <div class="verify-grid">
+        <div>
+          <div class="stat-strip">
+            <div class="stat-cell"><div class="stat-k">Student ID</div><div class="stat-v">${esc(r.student_id)}</div></div>
+            <div class="stat-cell"><div class="stat-k">Course</div><div class="stat-v">${esc(r.course)}</div></div>
+            <div class="stat-cell"><div class="stat-k">Marks Awarded</div><div class="stat-v">${r.marks}<span style="font-size:13px;color:var(--mute);font-weight:500"> / 100</span></div></div>
+            <div class="stat-cell"><div class="stat-k">Version &amp; Batch</div><div class="stat-v">v${r.version} <span class="badge ${x.superseded?'warn':'ok'}" style="vertical-align:middle">${x.superseded?'Superseded':'Current'}</span></div><div class="stat-s">Batch #${x.batch.n} · ${new Date(x.batch.ts).toLocaleDateString()}</div></div>
+          </div>
+
+          ${r.reason?`<div class="panel">
+            <div class="panel-head"><h2 class="panel-title">Two-Admin Signed Correction Attestation</h2><span class="badge ok">2-of-3 Multi-Sig</span></div>
+            <div class="panel-body">
+              <div style="font-size:13.5px;margin-bottom:8px"><b>Documented Reason:</b> ${esc(r.reason)}</div>
+              <div class="row">
+                ${r.approvals.map(a=>`<span class="badge neutral">Signed by ${esc(a[0])} (Ed25519)</span>`).join('')}
+                <span class="mono">Supersedes: ${esc((r.supersedes||'').slice(0,22))}…</span>
+              </div>
+            </div>
+          </div>`:''}
+
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2 class="panel-title">Client-Side Cryptographic Checks</h2><div class="panel-sub">Computed independently from raw payload &amp; external checkpoints</div></div>
+              <span class="mono">${elapsed} ms</span>
+            </div>
+            <div class="check-list">
+              ${chkRow('Canonical Leaf Digest','SHA-256(0x00 || canonical_v1_array) matches stored leaf',leafOk)}
+              ${chkRow('Merkle Inclusion Proof',`${steps.length} domain-separated 0x01 fold step${steps.length===1?'':'s'} match checkpoint root`,rootOk)}
+              ${chkRow('Append-Only Hash Chain',`Batch #${x.batch.n} header hash & prev-head pointer valid from genesis`,chainOk)}
+              ${chkRow('Ledger Ed25519 Signature','Batch head signature verified against root public key',sigOk)}
+              ${corrChecked?chkRow('Two-Admin Correction Signatures','2 distinct registrar Ed25519 signatures over correction digest',corrOk):''}
+              ${h?chkRow('QR Code Digest Binding','Scanned QR hash matches recomputed record leaf exactly',qrOk):''}
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2 class="panel-title">Interactive Merkle Inclusion Path</h2><div class="panel-sub">Bottom-up SHA-256 hash folding from leaf record to signed batch root</div></div>
+              <span class="badge neutral">${steps.length} level${steps.length===1?'':'s'}</span>
+            </div>
+            <div class="panel-body">
+              <div class="merkle-flow">
+                <div class="m-node">
+                  <div class="m-head"><span>Level 0 · Record Leaf (0x00 || canon)</span><button type="button" class="subtle xs" data-copy="${leaf}" data-label="Leaf hash">Copy</button></div>
+                  <div class="mono">${leaf}</div>
+                </div>
+                ${steps.map(st=>`
+                  <div class="m-arrow">↓ combine with ${st.side==='L'?'LEFT':'RIGHT'} sibling: ${st.sibling.slice(0,24)}…</div>
+                  <div class="m-node ${st.level===steps.length&&rootOk?'root':''}">
+                    <div class="m-head"><span>Level ${st.level}${st.level===steps.length?' · Recomputed Merkle Root':''}</span><button type="button" class="subtle xs" data-copy="${st.result}" data-label="Level ${st.level} hash">Copy</button></div>
+                    <div class="mono">${st.result}</div>
+                  </div>`).join('')}
+                ${steps.length===0?`<div class="m-node ${rootOk?'root':''}"><div class="m-head"><span>Single-Leaf Batch · Leaf Equals Merkle Root</span><button type="button" class="subtle xs" data-copy="${calcRoot}" data-label="Merkle root">Copy</button></div><div class="mono">${calcRoot}</div></div>`:''}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">Verification QR</h2><span class="badge neutral">v${r.version}</span></div>
+          <div class="panel-body" style="text-align:center">
+            <img class="qr-card" alt="Verification QR" src="/api/qr?text=${enc(link)}">
+            <div style="font-size:12px;color:var(--mute);margin:10px 0 12px">Scan on any device to verify without logging in.</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <button type="button" class="ghost sm" data-copy="${link}" data-label="Verify URL">Copy Verification Link</button>
+              <a href="${sheetLink({student_id:r.student_id,course:r.course,leaf:x.leaf})}" style="width:100%"><button type="button" class="subtle sm" style="width:100%">Print Official Marksheet</button></a>
+            </div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);text-align:left">
+              <div class="stat-k">Signed Batch Head</div>
+              <div class="mono" style="margin-bottom:8px">${x.batch.head.slice(0,28)}…</div>
+              <div class="stat-k">Timestamp</div>
+              <div style="font-size:12px;color:var(--ink-2)">${new Date(x.batch.ts).toLocaleString()}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>`;
-  $('#copyUrl').onclick=()=>copyVal(link,'Verification URL');
+  }).join('');
+
+  out.innerHTML=qrWarn+html;
+  out.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyVal(b.dataset.copy,b.dataset.label));
+  out.querySelectorAll('[data-dlproof]').forEach(b=>b.onclick=()=>{
+    const v=verifiedItems[Number(b.dataset.dlproof)];
+    downloadJson(`proof-${v.x.record.student_id}-${v.x.record.course}-v${v.x.record.version}.json`,{
+      protocol:'result-ledger-v1',
+      verified_at:new Date().toISOString(),
+      client_verified:v.valid,
+      record:v.x.record,
+      leaf:v.leaf,
+      proof:v.x.proof,
+      batch:v.x.batch
+    });
+    toast('Cryptographic proof bundle downloaded');
+  });
 }
 
-/* ---------------- REGISTRAR ---------------- */
+/* ==================== 2. LEDGER EXPLORER ==================== */
+async function explorer(){
+  $('#topActions').innerHTML='<button type="button" class="ghost sm" id="expRefresh">Refresh Chain</button>';
+  app.innerHTML=`
+    <div class="page-head">
+      <div>
+        <h1>Ledger Explorer</h1>
+        <p>Public transparency log of all signed, hash-chained result batches anchored outside the SQLite database.</p>
+      </div>
+    </div>
+    <div id="expBody"><div class="panel"><div class="empty">Verifying checkpoint chain…</div></div></div>`;
+
+  const load=async()=>{
+    const {j:cp}=await api('/api/checkpoints');
+    const list=cp.checkpoints||[];
+    $('#sbBatches').textContent=list.length;
+    if(!list.length){
+      $('#expBody').innerHTML='<div class="panel"><div class="empty">No batches anchored yet. Publish a batch in the Registrar Console to create Batch #1.</div></div>';
+      return;
+    }
+    let prev=GENESIS, allOk=true;
+    const rows=[];
+    for(const k of list){
+      const calcHead=await headOf(k);
+      const sigOk=await verifyEd25519(cp.ledger_pub,k.head,k.sig);
+      const ok=k.prev===prev&&calcHead===k.head&&sigOk!==false;
+      if(!ok)allOk=false;
+      rows.push({k,ok,sigOk});
+      prev=k.head;
+    }
+    const totalLeaves=list.reduce((a,b)=>a+Number(b.count||0),0);
+    $('#expBody').innerHTML=`
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-k">Chain Integrity</div><div class="stat-v" style="color:${allOk?'var(--ok)':'var(--err)'}">${allOk?'Verified':'Broken'}</div><div class="stat-s">Client-side Ed25519</div></div>
+        <div class="stat-cell"><div class="stat-k">Anchored Batches</div><div class="stat-v">${list.length}</div><div class="stat-s">Genesis → #${list[list.length-1].n}</div></div>
+        <div class="stat-cell"><div class="stat-k">Total Anchored Leaves</div><div class="stat-v">${totalLeaves}</div><div class="stat-s">Append-only records</div></div>
+        <div class="stat-cell"><div class="stat-k">Latest Head</div><div class="stat-v mono" style="font-size:13px;color:var(--ink);margin-top:6px">${list[list.length-1].head.slice(0,14)}…</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Signed Checkpoint Chain</h2><span class="badge ${allOk?'ok':'err'}">${allOk?'All Signatures Valid':'Chain Violation'}</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Batch</th><th>Status</th><th>Leaves</th><th>Published</th><th>Merkle Root</th><th>Signed Head</th><th>Prev Link</th><th></th></tr></thead>
+          <tbody>${rows.slice().reverse().map(({k,ok})=>`<tr>
+            <td class="num"><b>#${k.n}</b></td>
+            <td><span class="badge ${ok?'ok':'err'}">${ok?'Verified':'Invalid'}</span></td>
+            <td class="num">${k.count}</td>
+            <td class="num" style="white-space:nowrap">${new Date(k.ts).toLocaleString()}</td>
+            <td class="mono">${k.root.slice(0,16)}…</td>
+            <td class="mono">${k.head.slice(0,16)}…</td>
+            <td class="mono">${k.prev===GENESIS?'GENESIS':k.prev.slice(0,12)+'…'}</td>
+            <td><button type="button" class="subtle xs" data-inspect="${k.n}">Inspect</button></td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+    document.querySelectorAll('[data-inspect]').forEach(b=>b.onclick=()=>{
+      const item=rows.find(r=>r.k.n===Number(b.dataset.inspect));
+      if(!item)return;
+      const c=item.k;
+      openModal(`Batch #${c.n} Cryptographic Header`,`
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div class="stat-k">Merkle Root (SHA-256)</div><div class="mono">${c.root}</div></div>
+          <div><div class="stat-k">Signed Header Hash</div><div class="mono">${c.head}</div></div>
+          <div><div class="stat-k">Previous Batch Head</div><div class="mono">${c.prev}</div></div>
+          <div><div class="stat-k">Ed25519 Signature</div><div class="mono">${c.sig}</div></div>
+          <div class="between" style="padding-top:8px;border-top:1px solid var(--line)">
+            <span class="mono">${c.count} leaves · ${new Date(c.ts).toISOString()}</span>
+            <button type="button" class="ghost sm" id="cpHdrBtn">Copy JSON</button>
+          </div>
+        </div>`);
+      $('#cpHdrBtn').onclick=()=>copyVal(JSON.stringify(c,null,2),`Batch #${c.n} JSON`);
+    });
+  };
+  $('#expRefresh').onclick=load;
+  load();
+}
+
+/* ==================== 3. TRUST ANCHORS & PUBLIC KEYS ==================== */
+async function keys(){
+  app.innerHTML=`
+    <div class="page-head">
+      <div>
+        <h1>Trust Anchors &amp; Public Keys</h1>
+        <p>Live Ed25519 verification keys published by this registry and used by browsers to independently verify batch headers and two-admin corrections.</p>
+      </div>
+    </div>
+    <div id="keysOut"><div class="panel"><div class="empty">Loading public keys…</div></div></div>`;
+
+  const {j:cp}=await api('/api/checkpoints');
+  const fp=async pem=>hasSubtle?(await shaStr(pem)).slice(0,32):'HTTPS required';
+  const ledgerFp=await fp(cp.ledger_pub||'');
+  const adminEntries=await Promise.all(Object.entries(cp.admin_pubs||{}).map(async([id,pem])=>({id,pem,fp:await fp(pem)})));
+
+  $('#keysOut').innerHTML=`
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">Ledger Root Signing Key</h2><div class="panel-sub">Signs every published batch header (Ed25519)</div></div>
+          <button type="button" class="ghost xs" data-copy="${esc(cp.ledger_pub||'')}" data-label="Ledger public key">Copy PEM</button>
+        </div>
+        <div class="panel-body">
+          <div class="row" style="margin-bottom:10px"><span class="badge ok">Active Root</span><span class="mono">SHA-256: ${ledgerFp}</span></div>
+          <pre class="pem-box">${esc(cp.ledger_pub||'')}</pre>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Cryptographic Specification</h2><span class="badge neutral">v1</span></div>
+        <div class="table-wrap"><table>
+          <tr><th style="width:42%">Record Serialization</th><td class="mono">['v1',batch,student,course,marks,ver,sup,reason,approvals]</td></tr>
+          <tr><th>Leaf Domain Prefix</th><td class="mono">SHA-256(0x00 || canonical_utf8)</td></tr>
+          <tr><th>Node Domain Prefix</th><td class="mono">SHA-256(0x01 || left || right)</td></tr>
+          <tr><th>Odd Node Handling</th><td>Promoted upward (no duplication)</td></tr>
+          <tr><th>Signature Algorithm</th><td class="mono">Ed25519 (RFC 8032)</td></tr>
+          <tr><th>Correction Quorum</th><td>2-of-3 distinct registrar signatures</td></tr>
+          <tr><th>Genesis Prev Hash</th><td class="mono">00000000…0000 (64 zeroes)</td></tr>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2 class="panel-title">Authorized Registrar Multi-Sig Keys</h2><div class="panel-sub">Any two distinct keys below must sign a correction digest before it can be appended</div></div>
+        <span class="badge neutral">${adminEntries.length} keys registered</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-2" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+          ${adminEntries.map(a=>`<div style="border:1px solid var(--line);border-radius:6px;padding:12px">
+            <div class="between" style="margin-bottom:8px">
+              <span class="badge neutral">Registrar ${esc(a.id)}</span>
+              <button type="button" class="subtle xs" data-copy="${esc(a.pem)}" data-label="Admin ${esc(a.id)} key">Copy PEM</button>
+            </div>
+            <div class="mono" style="margin-bottom:8px;font-size:11px">FP: ${a.fp}</div>
+            <pre class="pem-box" style="font-size:10.5px">${esc(a.pem)}</pre>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  $('#keysOut').querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyVal(b.dataset.copy,b.dataset.label));
+}
+
+/* ==================== 4. OFFICIAL PRINTABLE MARKSHEET ==================== */
+async function marksheet(){
+  const q=hashArgs(), s=q.get('s')||'', c=q.get('c')||'', h=q.get('h')||'';
+  if(!s){app.innerHTML='<div class="panel"><div class="empty">Missing student parameters.</div></div>';return;}
+  app.innerHTML='<div class="panel"><div class="empty">Generating official statement of marks…</div></div>';
+  const {j:res}=await api(`/api/result?s=${enc(s)}${c?'&c='+enc(c):''}`);
+  const match=(res.results||[]).find(x=>h?x.leaf===h:!x.superseded)||res.results?.[0];
+  if(!match){app.innerHTML='<div class="status-bar err"><div class="status-lead"><div class="status-ico">✕</div><div><div class="status-title">Marksheet Not Found</div></div></div></div>';return;}
+  const r=match.record, link=qrLink({student_id:r.student_id,course:r.course,leaf:match.leaf});
+  app.innerHTML=`
+    <div class="sheet-wrap">
+      <div class="between noprint" style="margin-bottom:16px">
+        <button type="button" class="ghost sm" onclick="history.back()">← Back</button>
+        <div class="row">
+          <button type="button" class="ghost sm" id="msCopy">Copy Verify URL</button>
+          <a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${match.leaf}"><button type="button" class="ghost sm">Open Verifier</button></a>
+          <button type="button" class="sm" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="sheet-border">
+          <div class="sheet-head">
+            <div>
+              <h1 class="sheet-h1">Official Statement of Marks</h1>
+              <div class="sheet-sub">Cryptographically Signed Append-Only Examination Ledger</div>
+            </div>
+            <span class="badge ${match.superseded?'warn':'ok'}">${match.superseded?'SUPERSEDED VERSION':'AUTHENTIC CURRENT RECORD'}</span>
+          </div>
+          <div class="sheet-grid">
+            <table>
+              <tr><th>Student ID</th><td class="num"><b>${esc(r.student_id)}</b></td></tr>
+              <tr><th>Course Code</th><td>${esc(r.course)}</td></tr>
+              <tr><th>Marks Awarded</th><td class="num"><b style="font-size:16px">${r.marks}</b> / 100</td></tr>
+              <tr><th>Ledger Version</th><td class="num">Version ${r.version} · Anchored in Batch #${match.batch.n}</td></tr>
+              <tr><th>Issued Timestamp</th><td class="num">${new Date(match.batch.ts).toLocaleString()}</td></tr>
+              ${r.reason?`<tr><th>Correction Reason</th><td>${esc(r.reason)}</td></tr>
+              <tr><th>Authorized Signers</th><td>${r.approvals.map(a=>esc(a[0])).join(', ')} (Ed25519 Multi-Sig)</td></tr>`:''}
+            </table>
+            <div class="sheet-qr-box">
+              <img style="width:152px;height:152px;display:block;margin:0 auto" alt="Verification QR" src="/api/qr?text=${enc(link)}">
+              <div style="font-size:11.5px;font-weight:700;margin-top:8px;color:#09090b">Scan to Verify</div>
+              <div style="font-size:10.5px;color:#52525b">Client-side Merkle + Ed25519</div>
+            </div>
+          </div>
+          <div class="sheet-seal">
+            <b>Verification URL:</b> ${esc(link)}<br>
+            <b>Record Leaf (SHA-256):</b> ${match.leaf}<br>
+            <b>Batch Merkle Root:</b> ${match.batch.root}<br>
+            <b>Signed Batch Head:</b> ${match.batch.head}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  $('#msCopy').onclick=()=>copyVal(link,'Verification URL');
+}
+
+/* ==================== 5. REGISTRAR CONSOLE ==================== */
 function admin(){
   const tok=sessionStorage.tok||'';
   if(!tok){
     app.innerHTML=`
-      <div class="section auth-panel">
-        <div class="sec-head"><h2>Registrar Sign-In</h2><span class="mono">a1 / a2 / a3</span></div>
-        <p class="sec-note">Enter an admin token to publish result batches or co-sign result corrections.</p>
-        <form id="loginForm" style="display:flex;flex-direction:column;gap:12px">
-          <label class="field">Admin Token
-            <input id="tok" type="password" autocomplete="off" required>
-          </label>
-          <div class="row">
-            <button type="submit">Sign In</button>
-            <span id="loginErr" class="inline-msg err" style="margin:0"></span>
+      <div style="max-width:420px;margin:40px auto">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2 class="panel-title">Registrar Authentication</h2><div class="panel-sub">Sign in with an authorized admin token (a1, a2, or a3)</div></div>
           </div>
-        </form>
+          <div class="panel-body">
+            <form id="loginF" style="display:flex;flex-direction:column;gap:14px">
+              <label class="field">Admin Access Token
+                <input id="tokIn" type="password" placeholder="Enter admin token…" autocomplete="off" required>
+              </label>
+              <button type="submit">Authenticate</button>
+              <div id="loginErr" style="font-size:12.5px;color:var(--err);min-height:1em"></div>
+            </form>
+          </div>
+        </div>
       </div>`;
-    $('#tok').focus();
-    $('#loginForm').onsubmit=async e=>{
+    $('#tokIn').focus();
+    $('#loginF').onsubmit=async e=>{
       e.preventDefault();
-      const t=$('#tok').value.trim();
+      const t=$('#tokIn').value.trim();
       const {ok,j}=await api('/api/records',null,t);
       if(!ok){$('#loginErr').textContent=j.error||'Invalid token';return;}
       sessionStorage.tok=t;
-      renderAdminPortal(j);
+      toast(`Authenticated as ${j.admin}`);
+      renderAdmin(j);
     };
     return;
   }
-  loadAdminPortal();
+  loadAdmin();
 }
 
-async function loadAdminPortal(flash){
+async function loadAdmin(){
   const tok=sessionStorage.tok||'';
   const {ok,j}=await api('/api/records',null,tok);
-  if(!ok){sessionStorage.removeItem('tok');admin();return;}
-  renderAdminPortal(j,flash);
+  if(!ok){sessionStorage.removeItem('tok');toast(j.error||'Session expired',true);admin();return;}
+  renderAdmin(j);
 }
 
-function renderAdminPortal(j,flash){
+function parseCsvPreview(text){
+  const lines=String(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const rows=[];
+  lines.forEach((line,i)=>{
+    if(i===0 && /^student_id\s*,/i.test(line)) return;
+    const parts=line.split(',').map(x=>x.trim());
+    const [s,c,mRaw]=parts;
+    const m=Number(mRaw);
+    const err=!s||!c?'Missing student ID or course':mRaw===''||Number.isNaN(m)||m<0||m>100?'Marks must be 0–100':null;
+    rows.push({student_id:s||'',course:c||'',marks:mRaw||'',err});
+  });
+  return rows;
+}
+
+function renderAdmin(j){
   const tok=sessionStorage.tok||'';
   const maxVer=new Map();
   let maxBatch=0;
@@ -674,214 +1097,336 @@ function renderAdminPortal(j,flash){
     maxVer.set(k,Math.max(maxVer.get(k)||0,r.version));
     if(r.batch>maxBatch) maxBatch=r.batch;
   });
+  refreshNodeStatus();
+
+  $('#topActions').innerHTML=`
+    <span class="badge ok">Signed in: ${esc(j.admin)}</span>
+    <button type="button" class="ghost sm" id="topSwitch">Switch Admin</button>`;
+  $('#topSwitch').onclick=()=>{sessionStorage.removeItem('tok');admin();};
 
   app.innerHTML=`
-    <div class="page-head noprint">
+    <div class="page-head">
       <div>
         <h1>Registrar Console</h1>
-        <p>Publish signed exam batches and manage two-admin correction approvals.</p>
+        <p>Publish signed exam batches, manage records, and co-sign two-admin result corrections.</p>
       </div>
       <div class="row">
-        <span class="tag ok">Admin: ${esc(j.admin)}</span>
-        <button type="button" class="secondary sm" id="switchBtn">Switch Admin</button>
+        <button type="button" class="ghost sm" id="quickCorrBtn">+ Propose Correction</button>
+        <button type="button" class="sm" id="quickPubBtn">+ Publish Batch</button>
       </div>
     </div>
 
-    <div class="meta-strip noprint">
-      <div><span>Records:</span> <b>${j.records.length}</b></div>
-      <div><span>Signed Batches:</span> <b>${maxBatch}</b></div>
-      <div><span>Pending Corrections:</span> <b>${j.pending.length}</b></div>
-      <div><span>Active Key:</span> <b class="mono" style="color:var(--ink)">${esc(j.admin)}</b></div>
+    <div class="stat-strip">
+      <div class="stat-cell"><div class="stat-k">Published Records</div><div class="stat-v">${j.records.length}</div><div class="stat-s">Append-only entries</div></div>
+      <div class="stat-cell"><div class="stat-k">Signed Batches</div><div class="stat-v">${maxBatch}</div><div class="stat-s">Merkle-rooted</div></div>
+      <div class="stat-cell"><div class="stat-k">Pending Approvals</div><div class="stat-v" style="color:${j.pending.length?'var(--warn)':'var(--ink)'}">${j.pending.length}</div><div class="stat-s">2-of-3 multi-sig queue</div></div>
+      <div class="stat-cell"><div class="stat-k">Active Admin Key</div><div class="stat-v">${esc(j.admin)}</div><div class="stat-s">Ed25519 ready</div></div>
     </div>
 
-    <div class="split noprint">
-      <div class="section">
-        <div class="sec-head">
-          <h2>Publish Batch (CSV)</h2>
-          <div class="row">
-            <label class="file-btn">Import .csv<input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden></label>
-            <button type="button" class="link-btn" id="sampleBtn">Insert sample</button>
-          </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab ${adminTab==='records'?'on':''}" data-tab="records">Records Directory (${j.records.length})</button>
+      <button type="button" class="tab ${adminTab==='publish'?'on':''}" data-tab="publish">Publish Batch</button>
+      <button type="button" class="tab ${adminTab==='queue'?'on':''}" data-tab="queue">Multi-Sig Queue ${j.pending.length?`<span class="badge warn" style="margin-left:6px">${j.pending.length}</span>`:'(0)'}</button>
+    </div>
+
+    <div id="tabBody"></div>`;
+
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{adminTab=b.dataset.tab;renderAdmin(j);});
+  $('#quickPubBtn').onclick=()=>{adminTab='publish';renderAdmin(j);};
+  $('#quickCorrBtn').onclick=()=>openCorrectionModal('','',null,tok);
+
+  if(adminTab==='records') renderRecordsTab(j,maxVer,tok);
+  else if(adminTab==='publish') renderPublishTab(tok);
+  else renderQueueTab(j,tok);
+}
+
+function renderRecordsTab(j,maxVer,tok){
+  const host=$('#tabBody');
+  host.innerHTML=`
+    <div class="panel">
+      <div class="panel-head">
+        <div class="row" style="flex:1;min-width:240px">
+          <input id="rSearch" placeholder="Search by student ID or course…" style="max-width:280px;height:32px">
+          <select id="rStatus" style="width:150px;height:32px">
+            <option value="all">All versions</option>
+            <option value="current">Current only</option>
+            <option value="superseded">Superseded only</option>
+          </select>
         </div>
-        <p class="sec-note">Columns: <code>student_id,course,marks</code> (marks 0–100, decimals allowed).</p>
-        <textarea id="csv" placeholder="student_id,course,marks&#10;REG101,CSE101,84&#10;REG102,CSE101,91"></textarea>
-        <div class="between" style="margin-top:10px">
-          <button type="button" id="pub">Publish Batch</button>
-          <span id="pubMsg" class="inline-msg ${flash?.area==='pub'?flash.cls:''}" style="margin:0">${flash?.area==='pub'?esc(flash.text):''}</span>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sec-head"><h2>Propose Correction</h2><span class="mono">2-of-3 multi-sig</span></div>
-        <p class="sec-note">Appends a new version linked to the prior leaf hash. Requires two distinct admin signatures.</p>
-        <form id="propForm" style="display:flex;flex-direction:column;gap:10px">
-          <div class="row">
-            <label class="field">Student ID<input id="cs" placeholder="REG101" required></label>
-            <label class="field">Course<input id="cc" placeholder="CSE101" required></label>
-            <label class="field" style="max-width:115px">New Marks<input id="cm" type="number" step="any" min="0" max="100" required></label>
-          </div>
-          <label class="field">Reason (min 5 chars)
-            <input id="cr" placeholder="Official re-evaluation approval" minlength="5" required>
-          </label>
-          <div class="between">
-            <button type="submit">Submit Proposal</button>
-            <span id="propMsg" class="inline-msg ${flash?.area==='prop'?flash.cls:''}" style="margin:0">${flash?.area==='prop'?esc(flash.text):''}</span>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="section noprint">
-      <div class="sec-head">
-        <h2>Pending Approvals</h2>
-        <span id="pendMsg" class="inline-msg ${flash?.area==='pend'?flash.cls:''}" style="margin:0">${flash?.area==='pend'?esc(flash.text):`${j.pending.length} open`}</span>
-      </div>
-      ${j.pending.length?`<div class="table-wrap"><table>
-        <thead><tr><th>ID</th><th>Student</th><th>Course</th><th>Marks</th><th>Reason</th><th>Signatures</th><th>Action</th></tr></thead>
-        <tbody>${j.pending.map(p=>{
-          const n=p.approvals.length, mine=p.approvals.includes(j.admin);
-          return `<tr>
-            <td class="num"><b>#${p.id}</b></td>
-            <td class="num"><b>${esc(p.student_id)}</b></td>
-            <td>${esc(p.course)}</td>
-            <td class="num"><b>${p.marks}</b></td>
-            <td>${esc(p.reason)}</td>
-            <td><span class="tag ${n===1?'warn':'neutral'}">${n}/2</span> <span class="mono">${p.approvals.map(esc).join(', ')||'none'}</span></td>
-            <td><button type="button" class="sm ${mine?'secondary':''}" data-ap="${p.id}">Sign &amp; Approve</button></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table></div>`:'<div class="empty">No pending correction proposals.</div>'}
-    </div>
-
-    <div class="section">
-      <div class="sec-head">
-        <h2>Published Ledger Records</h2>
-        <div class="row noprint">
-          <input id="recFilter" placeholder="Filter student or course…" style="width:210px;padding:5px 9px;font-size:.82rem">
-          <button type="button" class="secondary sm" onclick="window.print()">Print</button>
-        </div>
+        <span class="mono" id="rCount">${j.records.length} records</span>
       </div>
       ${j.records.length?`<div class="table-wrap"><table>
-        <thead><tr><th>Batch</th><th>Student</th><th>Course</th><th>Marks</th><th>Version</th><th>QR</th><th class="noprint">Links</th></tr></thead>
-        <tbody id="recBody">${renderRecordRows(j.records,maxVer)}</tbody>
-      </table></div>`:'<div class="empty">No results published yet.</div>'}
+        <thead><tr><th>Batch</th><th>Student</th><th>Course</th><th>Marks</th><th>Status</th><th>QR</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody id="rTbody"></tbody>
+      </table></div>`:'<div class="empty">No results published yet. Switch to <b>Publish Batch</b> to anchor your first CSV.</div>'}
+    </div>`;
+  if(!j.records.length)return;
+
+  const paint=()=>{
+    const q=$('#rSearch').value.trim().toLowerCase();
+    const st=$('#rStatus').value;
+    const list=j.records.slice().reverse().filter(r=>{
+      const old=r.version<maxVer.get(r.student_id+'|'+r.course);
+      if(st==='current'&&old)return false;
+      if(st==='superseded'&&!old)return false;
+      if(q&&!r.student_id.toLowerCase().includes(q)&&!r.course.toLowerCase().includes(q))return false;
+      return true;
+    });
+    $('#rCount').textContent=`${list.length} of ${j.records.length}`;
+    $('#rTbody').innerHTML=list.length?list.map(r=>{
+      const old=r.version<maxVer.get(r.student_id+'|'+r.course);
+      return `<tr>
+        <td class="num"><span class="badge neutral">#${r.batch}</span></td>
+        <td class="num"><b>${esc(r.student_id)}</b></td>
+        <td>${esc(r.course)}</td>
+        <td class="num"><b>${r.marks}</b></td>
+        <td>v${r.version} <span class="badge ${old?'warn':'ok'}" style="margin-left:4px">${old?'Superseded':'Current'}</span></td>
+        <td><img class="qr-sm" loading="lazy" alt="QR" src="/api/qr?text=${enc(qrLink(r))}"></td>
+        <td style="text-align:right"><div class="row" style="justify-content:flex-end">
+          <a href="${sheetLink(r)}"><button type="button" class="ghost xs">Marksheet</button></a>
+          <a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}"><button type="button" class="subtle xs">Verify</button></a>
+          ${!old?`<button type="button" class="subtle xs" data-corr-s="${esc(r.student_id)}" data-corr-c="${esc(r.course)}" data-corr-m="${r.marks}">Correct</button>`:''}
+        </div></td>
+      </tr>`;
+    }).join(''):'<tr><td colspan="7" class="empty">No records match the current filter.</td></tr>';
+
+    $('#rTbody').querySelectorAll('[data-corr-s]').forEach(b=>b.onclick=()=>{
+      openCorrectionModal(b.dataset.corrS,b.dataset.corrC,b.dataset.corrM,tok);
+    });
+  };
+  $('#rSearch').oninput=paint;
+  $('#rStatus').onchange=paint;
+  paint();
+}
+
+function renderPublishTab(tok){
+  $('#tabBody').innerHTML=`
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">Upload or Paste CSV Batch</h2><div class="panel-sub">Columns: <code>student_id,course,marks</code></div></div>
+          <button type="button" class="subtle sm" id="loadSample">Load Sample</button>
+        </div>
+        <div class="panel-body">
+          <label class="dropzone" id="dz">
+            <div style="font-weight:600;font-size:13px">Drop a .CSV file here, or click to browse</div>
+            <div style="font-size:12px;color:var(--mute);margin-top:3px">Parsed locally before signing · Supports decimals &amp; zero marks</div>
+            <input type="file" id="csvIn" accept=".csv,text/csv,text/plain" hidden>
+          </label>
+          <textarea id="csvTxt" placeholder="student_id,course,marks&#10;REG101,CSE101,84&#10;REG102,CSE101,91"></textarea>
+          <div class="between" style="margin-top:12px">
+            <span class="mono" id="csvStat">0 rows staged</span>
+            <button type="button" id="pubBtn">Sign &amp; Anchor Batch</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Pre-Flight Validation Preview</h2><span class="badge neutral" id="preBadge">Idle</span></div>
+        <div id="preBody" class="empty">Paste or drop CSV data on the left to inspect parsed rows before publishing.</div>
+      </div>
     </div>`;
 
-  $('#switchBtn').onclick=()=>{sessionStorage.removeItem('tok');admin();};
-  $('#sampleBtn').onclick=()=>{
-    const r=Math.floor(100+Math.random()*899);
-    $('#csv').value=`student_id,course,marks\nREG${r}1,CSE101,78\nREG${r}2,CSE101,91\nREG${r}3,CSE101,64`;
+  const updatePreview=()=>{
+    const rows=parseCsvPreview($('#csvTxt').value);
+    const bad=rows.filter(r=>r.err).length;
+    $('#csvStat').textContent=`${rows.length} row${rows.length===1?'':'s'} staged${bad?` · ${bad} invalid`:''}`;
+    $('#preBadge').className=`badge ${!rows.length?'neutral':bad?'err':'ok'}`;
+    $('#preBadge').textContent=!rows.length?'Idle':bad?`${bad} Error${bad>1?'s':''}`:`${rows.length} Ready`;
+    if(!rows.length){
+      $('#preBody').innerHTML='<div class="empty">Paste or drop CSV data on the left to inspect parsed rows before publishing.</div>';
+      return;
+    }
+    $('#preBody').innerHTML=`<div class="table-wrap"><table>
+      <thead><tr><th>Student ID</th><th>Course</th><th>Marks</th><th>Validation</th></tr></thead>
+      <tbody>${rows.slice(0,50).map(r=>`<tr>
+        <td class="num"><b>${esc(r.student_id||'—')}</b></td>
+        <td>${esc(r.course||'—')}</td>
+        <td class="num">${esc(r.marks||'—')}</td>
+        <td>${r.err?`<span class="badge err">${esc(r.err)}</span>`:'<span class="badge ok">Valid</span>'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
   };
-  $('#csvFile').onchange=e=>{
-    const f=e.target.files?.[0];
+
+  $('#csvTxt').oninput=updatePreview;
+  $('#loadSample').onclick=()=>{
+    const n=Math.floor(100+Math.random()*899);
+    $('#csvTxt').value=`student_id,course,marks\nREG${n}1,CSE101,78\nREG${n}2,CSE101,92\nREG${n}3,CSE101,64`;
+    updatePreview();
+  };
+  const readFile=f=>{
     if(!f)return;
     const rd=new FileReader();
-    rd.onload=()=>{$('#csv').value=String(rd.result||'');notify(`Loaded ${f.name}`);};
+    rd.onload=()=>{$('#csvTxt').value=String(rd.result||'');updatePreview();toast(`Loaded ${f.name}`);};
     rd.readAsText(f);
   };
-  $('#pub').onclick=async()=>{
-    const r=await api('/api/publish',{csv:$('#csv').value},tok);
-    if(!r.ok){$('#pubMsg').className='inline-msg err';$('#pubMsg').textContent=r.j.error;return;}
-    loadAdminPortal({area:'pub',cls:'ok',text:`Published batch #${r.j.n} (${r.j.count} rows)`});
+  $('#csvIn').onchange=e=>readFile(e.target.files?.[0]);
+  const dz=$('#dz');
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag');};
+  dz.ondragleave=()=>dz.classList.remove('drag');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');readFile(e.dataTransfer.files?.[0]);};
+
+  $('#pubBtn').onclick=async()=>{
+    const r=await api('/api/publish',{csv:$('#csvTxt').value},tok);
+    if(!r.ok)return toast(r.j.error,true);
+    toast(`Anchored Batch #${r.j.n} (${r.j.count} records)`);
+    adminTab='records';
+    loadAdmin();
   };
-  $('#propForm').onsubmit=async e=>{
-    e.preventDefault();
-    const r=await api('/api/corrections',{student_id:$('#cs').value.trim(),course:$('#cc').value.trim(),marks:$('#cm').value,reason:$('#cr').value},tok);
-    if(!r.ok){$('#propMsg').className='inline-msg err';$('#propMsg').textContent=r.j.error;return;}
-    loadAdminPortal({area:'prop',cls:'ok',text:`Proposal #${r.j.id} created — requires 2 signatures`});
-  };
+}
+
+function renderQueueTab(j,tok){
+  $('#tabBody').innerHTML=`
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2 class="panel-title">Pending Two-Admin Corrections</h2><div class="panel-sub">Each correction requires cryptographic Ed25519 signatures from two distinct registrars</div></div>
+        <button type="button" class="sm" id="qNewCorr">+ New Proposal</button>
+      </div>
+      ${j.pending.length?`<div class="table-wrap"><table>
+        <thead><tr><th>Proposal</th><th>Student / Course</th><th>Proposed Marks</th><th>Documented Reason</th><th>2-of-3 Quorum</th><th style="text-align:right">Action</th></tr></thead>
+        <tbody>${j.pending.map(p=>{
+          const a=p.approvals||[], mine=a.includes(j.admin);
+          return `<tr>
+            <td class="num"><b>#${p.id}</b></td>
+            <td><b class="num">${esc(p.student_id)}</b> <span class="mono">${esc(p.course)}</span></td>
+            <td class="num"><b>${p.marks}</b> / 100</td>
+            <td>${esc(p.reason)}</td>
+            <td><div class="sig-slots">
+              <span class="sig-slot ${a[0]?'filled':''}">${a[0]?esc(a[0])+' ✓':'Signer 1'}</span>
+              <span class="sig-slot ${a[1]?'filled':''}">${a[1]?esc(a[1])+' ✓':'Signer 2'}</span>
+            </div></td>
+            <td style="text-align:right"><button type="button" class="sm ${mine?'ghost':''}" data-ap="${p.id}">${mine?'Already Signed (Test Block)':'Sign &amp; Approve'}</button></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`:'<div class="empty">No pending correction proposals. Click <b>+ New Proposal</b> or select <b>Correct</b> on any student record.</div>'}
+    </div>`;
+  $('#qNewCorr').onclick=()=>openCorrectionModal('','',null,tok);
   document.querySelectorAll('[data-ap]').forEach(b=>b.onclick=async()=>{
     const r=await api(`/api/corrections/${b.dataset.ap}/approve`,{},tok);
-    if(!r.ok){$('#pendMsg').className='inline-msg err';$('#pendMsg').textContent=r.j.error;return;}
-    const msg=r.j.status==='published'?`Correction published in batch #${r.j.n}`:`Signed by ${j.admin} (1/2) — switch admin to complete`;
-    loadAdminPortal({area:'pend',cls:'ok',text:msg});
+    if(!r.ok)return toast(r.j.error,true);
+    if(r.j.status==='published'){
+      toast(`Quorum reached — correction published in Batch #${r.j.n}`);
+      adminTab='records';
+    }else{
+      toast(`Signed by ${j.admin} (1/2) — switch to a second admin to finalize`);
+    }
+    loadAdmin();
   });
-  if($('#recFilter'))$('#recFilter').oninput=e=>{
-    const q=e.target.value.trim().toLowerCase();
-    const filtered=q?j.records.filter(r=>r.student_id.toLowerCase().includes(q)||r.course.toLowerCase().includes(q)):j.records;
-    $('#recBody').innerHTML=filtered.length?renderRecordRows(filtered,maxVer):'<tr><td colspan="7" class="empty">No matching records.</td></tr>';
+}
+
+function openCorrectionModal(student,course,currentMarks,tok){
+  openModal('Propose Signed Result Correction',`
+    <form id="corrModalF" style="display:flex;flex-direction:column;gap:12px">
+      ${currentMarks!==null?`<div class="badge neutral" style="align-self:flex-start">Current published marks: ${esc(currentMarks)} / 100</div>`:''}
+      <div class="row">
+        <label class="field">Student ID<input id="mcS" value="${esc(student)}" placeholder="REG101" required></label>
+        <label class="field">Course<input id="mcC" value="${esc(course)}" placeholder="CSE101" required></label>
+        <label class="field" style="max-width:120px">New Marks<input id="mcM" type="number" step="any" min="0" max="100" required></label>
+      </div>
+      <label class="field">Documented Reason (min 5 characters)
+        <input id="mcR" placeholder="e.g. Official re-evaluation panel approval" minlength="5" required>
+      </label>
+      <div class="between" style="padding-top:8px;border-top:1px solid var(--line)">
+        <span style="font-size:12px;color:var(--mute)">Requires 2 distinct admin signatures</span>
+        <div class="row">
+          <button type="button" class="ghost sm" id="mcCancel">Cancel</button>
+          <button type="submit" class="sm">Create Proposal</button>
+        </div>
+      </div>
+    </form>`);
+  $('#mcCancel').onclick=closeModal;
+  $('#corrModalF').onsubmit=async e=>{
+    e.preventDefault();
+    const r=await api('/api/corrections',{student_id:$('#mcS').value.trim(),course:$('#mcC').value.trim(),marks:$('#mcM').value,reason:$('#mcR').value},tok);
+    if(!r.ok)return toast(r.j.error,true);
+    closeModal();
+    toast(`Proposal #${r.j.id} created — awaiting 2 admin signatures`);
+    adminTab='queue';
+    loadAdmin();
   };
 }
 
-function renderRecordRows(records,maxVer){
-  return records.slice().reverse().map(r=>{
-    const old=r.version<maxVer.get(r.student_id+'|'+r.course);
-    return `<tr>
-      <td class="num">#${r.batch}</td>
-      <td class="num"><b>${esc(r.student_id)}</b></td>
-      <td>${esc(r.course)}</td>
-      <td class="num"><b>${r.marks}</b></td>
-      <td class="num">v${r.version} <span class="tag ${old?'warn':'ok'}" style="margin-left:4px">${old?'Superseded':'Current'}</span></td>
-      <td><img class="qr-sm" loading="lazy" alt="QR" src="/api/qr?text=${enc(qrLink(r))}"></td>
-      <td class="noprint"><a href="${sheetLink(r)}">Marksheet</a> · <a href="#verify?s=${enc(r.student_id)}&c=${enc(r.course)}&h=${r.leaf}">Verify</a></td>
-    </tr>`;
-  }).join('');
+function openModal(title,bodyHtml){
+  $('#modalHost').innerHTML=`
+    <div class="modal-bg" id="mBg">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="panel-head"><h2 class="panel-title">${esc(title)}</h2><button type="button" class="subtle xs" id="mClose">✕</button></div>
+        <div class="panel-body">${bodyHtml}</div>
+      </div>
+    </div>`;
+  $('#mClose').onclick=closeModal;
+  $('#mBg').onclick=e=>{if(e.target.id==='mBg')closeModal();};
 }
+function closeModal(){$('#modalHost').innerHTML='';}
 
-/* ---------------- AUDIT LOG ---------------- */
+/* ==================== 6. INTEGRITY AUDIT ==================== */
 async function audit(){
+  $('#topActions').innerHTML='<button type="button" class="ghost sm" id="dlAuditBtn" disabled>Export Report JSON</button>';
   app.innerHTML=`
     <div class="page-head">
       <div>
         <h1>Database Integrity Audit</h1>
-        <p>Recomputes every leaf hash, Merkle root, batch header, chain link, Ed25519 signature, and pending correction from SQLite against external checkpoints.</p>
+        <p>Forensic verification engine. Recomputes every leaf digest, Merkle root, batch header, chain link, Ed25519 signature, and pending correction directly from SQLite against external checkpoints.</p>
       </div>
-      <button type="button" id="go">Run Audit</button>
+      <button type="button" id="runAuditBtn">Run Full Audit</button>
     </div>
-    <div id="auditOut"></div>
-    <div class="section">
-      <div class="sec-head">
-        <h2>Signed Checkpoint Log</h2>
-        <span class="mono">External append-only anchor</span>
-      </div>
-      <div id="chainOut" class="empty">Loading checkpoints…</div>
-    </div>`;
+    <div id="auditOut"></div>`;
 
+  let lastReport=null;
   const run=async()=>{
-    $('#auditOut').innerHTML='<div class="section empty">Auditing SQLite records against external checkpoints…</div>';
-    const [{j},{j:cp}]=await Promise.all([api('/api/audit'),api('/api/checkpoints')]);
+    $('#auditOut').innerHTML='<div class="panel"><div class="empty">Auditing SQLite tables against external signed checkpoints…</div></div>';
+    const {j}=await api('/api/audit');
+    lastReport=j;
+    $('#dlAuditBtn').disabled=false;
+
     $('#auditOut').innerHTML=`
-      <div class="meta-strip">
-        <div><span>Status:</span> <b style="color:${j.ok?'var(--ok)':'var(--err)'}">${j.ok?'INTACT':'TAMPERED'}</b></div>
-        <div><span>Batches:</span> <b>${j.batches}</b></div>
-        <div><span>Records:</span> <b>${j.records}</b></div>
-        <div><span>Violations:</span> <b style="color:${j.issues.length?'var(--err)':'var(--ok)'}">${j.issues.length}</b></div>
-        <div><span>Checked:</span> <b>${new Date(j.checked_at).toLocaleTimeString()}</b></div>
-      </div>
-      <div class="section">
-        <div class="verdict ${j.ok?'ok':'err'}" style="margin-bottom:${j.issues.length?14:0}px">
+      <div class="status-bar ${j.ok?'ok':'err'}">
+        <div class="status-lead">
+          <div class="status-ico">${j.ok?'✓':'!'}</div>
           <div>
-            <div class="verdict-title">${j.ok?'LEDGER INTACT — ZERO TAMPERING DETECTED':`TAMPERING DETECTED — ${j.issues.length} VIOLATION${j.issues.length>1?'S':''} FOUND`}</div>
-            <div class="verdict-sub">${j.ok?'All SQLite records, batch Merkle roots, signatures, and pending proposals match the external signed checkpoints.':'Direct out-of-band modifications were detected in SQLite and pinpointed below.'}</div>
+            <div class="status-title">${j.ok?'Ledger Intact — Zero Tampering Detected':`Tampering Detected — ${j.issues.length} Integrity Violation${j.issues.length>1?'s':''} Pinpointed`}</div>
+            <div class="status-desc">${j.ok?'Every SQLite record, Merkle root, batch header, Ed25519 signature, and pending correction matches the external checkpoint log.':'Direct out-of-band modifications bypassing the application workflow were caught and pinpointed below.'}</div>
           </div>
         </div>
-        ${j.issues.length?`<div class="table-wrap"><table>
-          <thead><tr><th>Scope</th><th>Target</th><th>Detected Violation</th></tr></thead>
-          <tbody>${j.issues.map(i=>`<tr>
-            <td><span class="tag err">${i.batch===0?'Pending':'Batch #'+i.batch}</span></td>
-            <td>${i.student?`<b>${esc(i.student)}</b> / ${esc(i.course)}`:'Batch Header'}${i.idx!==undefined?` <span class="mono">(idx ${i.idx})</span>`:''}</td>
-            <td style="color:var(--err);font-weight:600">${esc(i.problem)}</td>
-          </tr>`).join('')}</tbody>
-        </table></div>`:''}
-      </div>`;
+        <span class="mono">${new Date(j.checked_at).toLocaleTimeString()}</span>
+      </div>
 
-    if(!cp.checkpoints?.length){
-      $('#chainOut').innerHTML='<div class="empty">No checkpoints published yet.</div>';
-    }else{
-      $('#chainOut').innerHTML=`<div class="table-wrap"><table>
-        <thead><tr><th>Batch</th><th>Leaves</th><th>Published</th><th>Merkle Root</th><th>Signed Head</th><th>Prev Head</th></tr></thead>
-        <tbody>${cp.checkpoints.slice().reverse().map(c=>`<tr>
-          <td class="num"><b>#${c.n}</b></td>
-          <td class="num">${c.count}</td>
-          <td class="num" style="white-space:nowrap">${new Date(c.ts).toLocaleString()}</td>
-          <td class="mono">${c.root.slice(0,18)}…</td>
-          <td class="mono">${c.head.slice(0,18)}…</td>
-          <td class="mono">${c.prev===GENESIS?'GENESIS':c.prev.slice(0,18)+'…'}</td>
-        </tr>`).join('')}</tbody>
-      </table></div>`;
-    }
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-k">Audit Verdict</div><div class="stat-v" style="color:${j.ok?'var(--ok)':'var(--err)'}">${j.ok?'INTACT':'TAMPERED'}</div></div>
+        <div class="stat-cell"><div class="stat-k">Batches Audited</div><div class="stat-v">${j.batches}</div></div>
+        <div class="stat-cell"><div class="stat-k">Records Verified</div><div class="stat-v">${j.records}</div></div>
+        <div class="stat-cell"><div class="stat-k">Violations Found</div><div class="stat-v" style="color:${j.issues.length?'var(--err)':'var(--ok)'}">${j.issues.length}</div></div>
+      </div>
+
+      ${j.issues.length?`<div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Pinpointed Forensic Incidents</h2><span class="badge err">${j.issues.length} Critical</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Scope</th><th>Affected Entity</th><th>Row Index</th><th>Forensic Finding</th></tr></thead>
+          <tbody>${j.issues.map(i=>`<tr>
+            <td><span class="badge err">${i.batch===0?'Pending Table':`Batch #${i.batch}`}</span></td>
+            <td>${i.student?`<b class="num">${esc(i.student)}</b> · ${esc(i.course)}`:'Batch Header / Root'}</td>
+            <td class="mono">${i.idx!==undefined?`idx ${i.idx}`:'—'}</td>
+            <td style="color:var(--err);font-weight:500">${esc(i.problem)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`:`<div class="panel">
+        <div class="panel-head"><h2 class="panel-title">Audit Engine Coverage</h2><span class="badge ok">6 / 6 Checks Passed</span></div>
+        <div class="check-list">
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Row-level canonical SHA-256 leaf recomputation across all SQLite records</span></div><span class="badge ok">CLEAN</span></div>
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Full batch Merkle tree reconstruction vs signed external checkpoint root</span></div><span class="badge ok">CLEAN</span></div>
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Deleted row &amp; injected row index detection against checkpoint leaf list</span></div><span class="badge ok">CLEAN</span></div>
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Batch header metadata (ts, prev, head, count) &amp; Ed25519 signature audit</span></div><span class="badge ok">CLEAN</span></div>
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Pending correction digest &amp; in-flight admin signature integrity check</span></div><span class="badge ok">CLEAN</span></div>
+          <div class="check-item"><div class="check-left"><span class="check-dot ok"></span><span>Genesis-to-head append-only hash chain continuity</span></div><span class="badge ok">CLEAN</span></div>
+        </div>
+      </div>`}`;
   };
-  $('#go').onclick=run;
+  $('#runAuditBtn').onclick=run;
+  $('#dlAuditBtn').onclick=()=>{
+    if(!lastReport)return;
+    downloadJson(`audit-report-${Date.now()}.json`,lastReport);
+    toast('Forensic audit report downloaded');
+  };
   run();
 }
 </script>
